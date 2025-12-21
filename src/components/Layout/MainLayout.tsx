@@ -222,7 +222,7 @@ const MainLayout: React.FC = () => {
               <Title level={4} style={{ margin: 0 }}>
                 {(() => {
                   const menuItem = menuItems.find(item => item && 'key' in item && item.key === location.pathname)
-                  return (menuItem && 'label' in menuItem ? menuItem.label : '金融资产分析系统') as string
+                  return (menuItem && 'label' in menuItem ? menuItem.label : '恒天金融资产分析系统') as string
                 })()}
               </Title>
             </div>
@@ -273,7 +273,7 @@ const MainLayout: React.FC = () => {
         }}>
           <Space direction="vertical" size="small">
             <div>
-              金融资产数据分析及展示系统 © {new Date().getFullYear()} 版权所有
+              恒天金融资产数据分析及展示系统 © {new Date().getFullYear()} 版权所有
             </div>
             <div>
               版本 1.0.0 | 数据更新于 {new Date().toLocaleDateString()}

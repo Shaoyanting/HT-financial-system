@@ -68,7 +68,7 @@ const LoginPage: React.FC = () => {
             <Lock size={28} color="white" />
           </div>
           <Title level={2} style={{ marginBottom: 8 }}>
-            金融资产分析系统
+            恒天金融资产分析系统
           </Title>
           <Text type="secondary">
             请输入您的凭证以访问系统
@@ -159,11 +159,7 @@ const LoginPage: React.FC = () => {
           borderTop: '1px solid #f0f0f0',
           textAlign: 'center',
         }}>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            注意：这是一个演示系统，所有数据均为模拟数据。
-            <br />
-            登录凭证仅用于前端演示，实际项目中应使用安全的认证方案。
-          </Text>
+
         </div>
       </Card>
     </div>
