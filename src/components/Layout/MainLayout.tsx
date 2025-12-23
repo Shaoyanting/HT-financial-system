@@ -10,7 +10,6 @@ import {
   Space,
   theme,
   Badge,
-  Tooltip,
   Popover,
   Tabs,
   List,
