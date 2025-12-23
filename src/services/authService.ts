@@ -9,6 +9,12 @@ export interface User {
   email: string
   avatar: string
   role: string
+  phone?: string
+  department?: string
+  position?: string
+  joinDate?: string
+  lastLogin?: string
+  bio?: string
 }
 
 // 登录响应类型
@@ -79,7 +85,14 @@ export const getCurrentUser = (): Omit<User, 'password'> | null => {
   const userStr = localStorage.getItem('financial_system_user')
   if (userStr) {
     try {
-      return JSON.parse(userStr)
+      const user = JSON.parse(userStr)
+      // 从localStorage加载用户扩展信息
+      const userProfileStr = localStorage.getItem(`financial_system_user_profile_${user.id}`)
+      if (userProfileStr) {
+        const userProfile = JSON.parse(userProfileStr)
+        return { ...user, ...userProfile }
+      }
+      return user
     } catch (error) {
       console.error('解析用户信息失败:', error)
       return null
@@ -98,10 +111,48 @@ export const validateToken = async (): Promise<boolean> => {
   return token.startsWith('mock-jwt-token-')
 }
 
+// 保存用户个人信息
+export const saveUserProfile = (userId: number, profileData: Partial<Omit<User, 'id' | 'username' | 'password' | 'role'>>): void => {
+  try {
+    // 获取当前用户信息
+    const currentUser = getCurrentUser()
+    if (!currentUser) return
+    
+    // 合并用户信息
+    const updatedUser = { ...currentUser, ...profileData }
+    
+    // 保存到localStorage
+    localStorage.setItem(`financial_system_user_profile_${userId}`, JSON.stringify(profileData))
+    
+    // 同时更新主用户信息
+    localStorage.setItem('financial_system_user', JSON.stringify(updatedUser))
+    
+    console.log('用户信息已保存:', profileData)
+  } catch (error) {
+    console.error('保存用户信息失败:', error)
+  }
+}
+
+// 获取用户扩展信息
+export const getUserProfile = (userId: number): Partial<Omit<User, 'id' | 'username' | 'password' | 'role'>> | null => {
+  try {
+    const profileStr = localStorage.getItem(`financial_system_user_profile_${userId}`)
+    if (profileStr) {
+      return JSON.parse(profileStr)
+    }
+    return null
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+    return null
+  }
+}
+
 export default {
   login,
   logout,
   isAuthenticated,
   getCurrentUser,
   validateToken,
+  saveUserProfile,
+  getUserProfile,
 }

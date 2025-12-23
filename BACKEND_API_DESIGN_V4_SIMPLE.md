@@ -344,80 +344,7 @@
 }
 ```
 
-## 7. 行业分析页面接口
-
-### 7.1 获取行业分布数据
-**GET** `/api/industry/distribution?range=1y&filter=all`
-**响应**：
-```json
-{
-  "success": true,
-  "data": [
-    {"industry": "科技", "value": 35.8, "color": "#1890ff"},
-    {"industry": "金融", "value": 18.5, "color": "#52c41a"},
-    {"industry": "消费", "value": 15.2, "color": "#faad14"}
-  ]
-}
-```
-
-### 7.2 获取行业收益数据
-**GET** `/api/industry/returns?range=1y&sortBy=return&filter=all`
-**响应**：
-```json
-{
-  "success": true,
-  "data": [
-    {"industry": "科技", "return": 42.5, "volatility": 25.3, "sharpe": 1.68, "marketCap": 85000000},
-    {"industry": "金融", "return": 18.2, "volatility": 15.8, "sharpe": 1.15, "marketCap": 45000000}
-  ]
-}
-```
-
-### 7.3 获取行业历史数据
-**GET** `/api/industry/historical`
-**响应**：
-```json
-{
-  "success": true,
-  "data": [
-    {"date": "2024-01", "科技": 30.5, "金融": 20.2, "消费": 15.8, "医疗": 12.5, "工业": 10.3},
-    {"date": "2024-02", "科技": 31.2, "金融": 19.8, "消费": 16.1, "医疗": 12.3, "工业": 10.1}
-  ]
-}
-```
-
-### 7.4 获取行业相关性数据
-**GET** `/api/industry/correlation`
-**响应**：
-```json
-{
-  "success": true,
-  "data": [
-    {"industry": "科技", "科技": 1.00, "金融": 0.35, "消费": 0.42, "医疗": 0.38, "工业": 0.31},
-    {"industry": "金融", "科技": 0.35, "金融": 1.00, "消费": 0.28, "医疗": 0.25, "工业": 0.32}
-  ]
-}
-```
-
-### 7.5 获取行业分析统计指标
-**GET** `/api/industry/stats`
-**响应**：
-```json
-{
-  "success": true,
-  "data": {
-    "totalIndustries": 10,
-    "topIndustry": "科技",
-    "topIndustryPercentage": 35.8,
-    "avgReturn": 17.4,
-    "avgVolatility": 18.1,
-    "concentrationIndex": 0.42,
-    "diversificationScore": 7.8
-  }
-}
-```
-
-## 8. 接口调用示例
+## 7. 接口调用示例
 
 ### 8.1 登录示例
 ```javascript
@@ -510,27 +437,7 @@ const fetchDistributionData = async (token, category = 'all', range = 'current')
 }
 ```
 
-### 8.7 获取行业分析数据
-```javascript
-const fetchIndustryData = async (token, range = '1y', filter = 'all', sortBy = 'return') => {
-  const [distribution, returns, historical, correlation, stats] = await Promise.all([
-    fetch(`/api/industry/distribution?range=${range}&filter=${filter}`, {headers: {Authorization: `Bearer ${token}`}}),
-    fetch(`/api/industry/returns?range=${range}&sortBy=${sortBy}&filter=${filter}`, {headers: {Authorization: `Bearer ${token}`}}),
-    fetch('/api/industry/historical', {headers: {Authorization: `Bearer ${token}`}}),
-    fetch('/api/industry/correlation', {headers: {Authorization: `Bearer ${token}`}}),
-    fetch('/api/industry/stats', {headers: {Authorization: `Bearer ${token}`}})
-  ])
-  return {
-    distribution: await distribution.json(),
-    returns: await returns.json(),
-    historical: await historical.json(),
-    correlation: await correlation.json(),
-    stats: await stats.json()
-  }
-}
-```
-
-## 9. 技术规范（简化）
+## 8. 技术规范（简化）
 
 ### 9.1 认证
 - 使用JWT令牌
@@ -558,7 +465,7 @@ const fetchIndustryData = async (token, range = '1y', filter = 'all', sortBy = '
 - sortBy：排序字段
 - sortOrder：排序方向（asc/desc）
 
-## 10. 模拟数据规则
+## 9. 模拟数据规则
 
 ### 10.1 数值范围
 - 百分比：0-100
@@ -578,7 +485,7 @@ const fetchIndustryData = async (token, range = '1y', filter = 'all', sortBy = '
 - 日期格式：YYYY-MM或YYYY-MM-DD
 - 按时间范围生成不同粒度的数据
 
-## 11. 部署配置
+## 10. 部署配置
 
 ### 11.1 开发环境
 - 后端端口：8080
@@ -608,6 +515,6 @@ npm run dev
 
 ---
 
-**文档版本**：v4.0  
-**更新日期**：2025-12-22  
-**更新内容**：新增登录、数据看板、数据列表页面接口设计，重新组织文档结构
+**文档版本**：v4.1  
+**更新日期**：2025-12-23  
+**更新内容**：删除行业分析页面接口，更新文档结构
