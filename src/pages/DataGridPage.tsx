@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Input,
@@ -31,10 +31,10 @@ import {
   LeftOutlined,
   RightOutlined,
 } from '@ant-design/icons'
-import { TrendingUp, TrendingDown, BarChart3, Filter } from 'lucide-react'
-import { flexRender, getCoreRowModel, getSortedRowModel, getFilteredRowModel, useReactTable } from '@tanstack/react-table'
+import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react'
+import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table'
 import type { ColumnDef } from '@tanstack/react-table'
-import { getAssets, type Asset } from '../services/dataService'
+import { getAssetsFromApi, type Asset, type AssetsApiResponse, type GetAssetsParams } from '../services/dataService'
 import { formatCurrency, formatPercent, getChangeColorClass } from '../utils/formatters'
 
 const { Title, Text } = Typography
@@ -46,90 +46,110 @@ const DataGridPage: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
   const [searchText, setSearchText] = useState('')
-  const [industryFilter, setIndustryFilter] = useState<string>('all')
+  const [assetCategoryFilter, setAssetCategoryFilter] = useState<string>('all')
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [apiStats, setApiStats] = useState<AssetsApiResponse['data']['stats'] | null>(null)
+  const [debouncedSearchText, setDebouncedSearchText] = useState('')
 
-  useEffect(() => {
-    const fetchAssets = async () => {
-      try {
-        setLoading(true)
-        const data = await getAssets()
-        setAssets(data)
-      } catch (error) {
+  // 获取资产数据
+  const fetchAssets = async (params?: GetAssetsParams) => {
+    try {
+      setLoading(true)
+      const response = await getAssetsFromApi(params)
+      if (response.success) {
+        console.log('设置资产数据:', {
+          dataLength: response.data.data?.length || 0,
+          data: response.data.data,
+          stats: response.data.stats,
+          searchParams: params,
+        })
+        setAssets(response.data.data)
+        setApiStats(response.data.stats)
+      } else {
         message.error('加载资产数据失败')
-        console.error('加载资产数据错误:', error)
-      } finally {
-        setLoading(false)
       }
+    } catch (error) {
+      message.error('加载资产数据失败')
+      console.error('加载资产数据错误:', error)
+    } finally {
+      setLoading(false)
     }
-
-    fetchAssets()
-  }, [])
-
-  // 获取所有行业
-  const industries = useMemo(() => {
-    const uniqueIndustries = Array.from(new Set(assets.map(asset => asset.industry)))
-    return ['all', ...uniqueIndustries]
-  }, [assets])
-
-  // 获取行业颜色
-  const getIndustryColor = (industry: string) => {
-    const colors: Record<string, string> = {
-      科技: 'blue',
-      金融: 'green',
-      消费: 'orange',
-      医疗: 'red',
-      能源: 'purple',
-      工业: 'cyan',
-      房地产: 'magenta',
-      材料: 'gold',
-      公用事业: 'lime',
-      通信服务: 'geekblue',
-    }
-    return colors[industry] || 'default'
   }
 
-  // 过滤数据
-  const filteredAssets = useMemo(() => {
-    let filtered = assets
-    if (searchText) {
-      const lowerSearch = searchText.toLowerCase()
-      filtered = filtered.filter(
-        asset =>
-          asset.code.toLowerCase().includes(lowerSearch) ||
-          asset.name.toLowerCase().includes(lowerSearch)
-      )
-    }
-    if (industryFilter && industryFilter !== 'all') {
-      filtered = filtered.filter(asset => asset.industry === industryFilter)
-    }
-    return filtered
-  }, [assets, searchText, industryFilter])
+  // 初始加载
+  useEffect(() => {
+    fetchAssets({
+      page: currentPage,
+      size: pageSize,
+      search: debouncedSearchText,
+      industry: assetCategoryFilter !== 'all' ? assetCategoryFilter : '',
+      sortBy: sorting.length > 0 ? sorting[0].id : 'currentPrice',
+      sortOrder: sorting.length > 0 ? (sorting[0].desc ? 'desc' : 'asc') : 'desc',
+    })
+  }, [currentPage, pageSize, debouncedSearchText, assetCategoryFilter, sorting])
 
-  // 统计数据
-  const stats = useMemo(() => {
-    const totalMarketValue = filteredAssets.reduce((sum, asset) => sum + asset.marketValue, 0)
-    const totalDailyGain = filteredAssets.reduce((sum, asset) => sum + asset.dailyGain, 0)
-    const avgChangePercent = filteredAssets.length > 0
-      ? filteredAssets.reduce((sum, asset) => sum + asset.changePercent, 0) / filteredAssets.length
+  // 使用API统计数据或本地计算统计数据
+  const displayStats = useMemo(() => {
+    console.log('计算displayStats:', {
+      apiStats,
+      assetsLength: assets.length,
+      assets: assets,
+    })
+    
+    if (apiStats) {
+      return {
+        totalMarketValue: apiStats.totalMarketValue,
+        totalDailyGain: apiStats.totalDailyGain,
+        avgChangePercent: apiStats.avgChangePercent,
+        count: apiStats.count,
+      }
+    }
+    
+    // 如果没有API统计数据，使用本地计算
+    const totalMarketValue = assets.reduce((sum, asset) => sum + asset.marketValue, 0)
+    const totalDailyGain = assets.reduce((sum, asset) => sum + asset.dailyGain, 0)
+    const avgChangePercent = assets.length > 0
+      ? assets.reduce((sum, asset) => sum + asset.changePercent, 0) / assets.length
       : 0
 
     return {
       totalMarketValue,
       totalDailyGain,
       avgChangePercent,
-      count: filteredAssets.length,
+      count: assets.length,
     }
-  }, [filteredAssets])
+  }, [apiStats, assets])
 
-  // 分页数据
+  // 计算总记录数：优先使用stats.count，如果没有则使用assets.length
+  const totalRecords = useMemo(() => {
+    if (apiStats && apiStats.count > 0) {
+      return apiStats.count
+    }
+    return assets.length
+  }, [apiStats, assets])
+
+  // 获取资产类别颜色
+  const getAssetCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      现金: 'green',
+      债券: 'blue',
+      股票: 'red',
+      基金: 'purple',
+      商品: 'orange',
+      房地产: 'magenta',
+      其他: 'cyan',
+    }
+    return colors[category] || 'default'
+  }
+
+  // 分页数据 - 前端分页（因为后端没有实现分页）
   const paginatedAssets = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize
     const endIndex = startIndex + pageSize
-    return filteredAssets.slice(startIndex, endIndex)
-  }, [filteredAssets, currentPage, pageSize])
+    return assets.slice(startIndex, endIndex)
+  }, [assets, currentPage, pageSize])
 
   // 处理页码变化
   const handlePageChange = (page: number, size?: number) => {
@@ -139,10 +159,37 @@ const DataGridPage: React.FC = () => {
     }
   }
 
+  // 清除所有筛选条件
+  const handleClearFilters = () => {
+    setSearchText('')
+    setAssetCategoryFilter('all')
+    message.success('已清除所有筛选条件')
+  }
+
+  // 防抖搜索
+  const debounceTimeoutRef = useRef<number | null>(null)
+
+  // 防抖效果：延迟设置搜索文本
+  useEffect(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
+    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearchText(searchText)
+    }, 500) // 500ms防抖延迟
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+    }
+  }, [searchText])
+
   // 当筛选条件变化时重置页码
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchText, industryFilter])
+  }, [debouncedSearchText, assetCategoryFilter])
 
   // 定义表格列
   const columns = useMemo<ColumnDef<Asset>[]>(
@@ -188,11 +235,11 @@ const DataGridPage: React.FC = () => {
         size: 140,
       },
       {
-        accessorKey: 'industry',
-        header: '行业',
+        accessorKey: 'assetCategory',
+        header: '资产类别',
         cell: ({ row }) => (
-          <Tag color={getIndustryColor(row.original.industry)}>
-            {row.original.industry}
+          <Tag color={getAssetCategoryColor(row.original.assetCategory)}>
+            {row.original.assetCategory}
           </Tag>
         ),
         size: 120,
@@ -279,18 +326,18 @@ const DataGridPage: React.FC = () => {
     columns,
     state: {
       sorting,
-      globalFilter: searchText,
     },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    // 移除前端过滤，因为已经由后端处理
+    // getFilteredRowModel: getFilteredRowModel(),
   })
 
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <Title level={2}>数据列表</Title>
+        <Title level={2}>持仓明细</Title>
         <Text type="secondary">查看和管理所有持仓资产的详细清单</Text>
       </div>
 
@@ -300,7 +347,7 @@ const DataGridPage: React.FC = () => {
           <Card>
             <Statistic
               title="总资产数量"
-              value={stats.count}
+              value={displayStats.count}
               valueStyle={{ color: '#1890ff' }}
               prefix={<BarChart3 size={20} />}
             />
@@ -310,7 +357,7 @@ const DataGridPage: React.FC = () => {
           <Card>
             <Statistic
               title="总市值"
-              value={stats.totalMarketValue}
+              value={displayStats.totalMarketValue}
               formatter={(value) => formatCurrency(value as number)}
               valueStyle={{ color: '#52c41a' }}
               prefix={<TrendingUp size={20} />}
@@ -321,10 +368,10 @@ const DataGridPage: React.FC = () => {
           <Card>
             <Statistic
               title="总当日盈亏"
-              value={stats.totalDailyGain}
+              value={displayStats.totalDailyGain}
               formatter={(value) => formatCurrency(value as number)}
-              valueStyle={{ color: stats.totalDailyGain >= 0 ? '#52c41a' : '#ff4d4f' }}
-              prefix={stats.totalDailyGain >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+              valueStyle={{ color: displayStats.totalDailyGain >= 0 ? '#52c41a' : '#ff4d4f' }}
+              prefix={displayStats.totalDailyGain >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
             />
           </Card>
         </Col>
@@ -332,10 +379,10 @@ const DataGridPage: React.FC = () => {
           <Card>
             <Statistic
               title="平均涨跌幅"
-              value={stats.avgChangePercent}
+              value={displayStats.avgChangePercent}
               formatter={(value) => formatPercent((value as number) / 100, 2)}
-              valueStyle={{ color: stats.avgChangePercent >= 0 ? '#52c41a' : '#ff4d4f' }}
-              prefix={stats.avgChangePercent >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+              valueStyle={{ color: displayStats.avgChangePercent >= 0 ? '#52c41a' : '#ff4d4f' }}
+              prefix={displayStats.avgChangePercent >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
             />
           </Card>
         </Col>
@@ -358,28 +405,34 @@ const DataGridPage: React.FC = () => {
           <Col xs={24} md={8}>
             <Select
               style={{ width: '100%' }}
-              placeholder="选择行业"
-              value={industryFilter}
-              onChange={setIndustryFilter}
+              placeholder="选择资产类别"
+              value={assetCategoryFilter}
+              onChange={setAssetCategoryFilter}
               suffixIcon={<FilterOutlined />}
             >
-              <Option value="all">所有行业</Option>
-              {industries
-                .filter(ind => ind !== 'all')
-                .map((industry) => (
-                  <Option key={industry} value={industry}>
-                    {industry}
-                  </Option>
-                ))}
+              <Option value="all">所有资产</Option>
+              <Option value="现金">现金</Option>
+              <Option value="债券">债券</Option>
+              <Option value="股票">股票</Option>
+              <Option value="基金">基金</Option>
+              <Option value="商品">商品</Option>
+              <Option value="房地产">房地产</Option>
+              <Option value="其他">其他</Option>
             </Select>
           </Col>
           <Col xs={24} md={8}>
             <Space style={{ float: 'right' }}>
+              <Tooltip title="清除所有筛选条件">
+                <Button 
+                  icon={<FilterOutlined />}
+                  onClick={handleClearFilters}
+                  disabled={!searchText && assetCategoryFilter === 'all'}
+                >
+                  清除筛选
+                </Button>
+              </Tooltip>
               <Tooltip title="导出数据">
                 <Button icon={<DownloadOutlined />}>导出</Button>
-              </Tooltip>
-              <Tooltip title="更多筛选">
-                <Button icon={<Filter size={16} />}>高级筛选</Button>
               </Tooltip>
             </Space>
           </Col>
@@ -392,7 +445,7 @@ const DataGridPage: React.FC = () => {
           <Space>
             <FilterOutlined />
             <span>资产列表</span>
-            <Badge count={filteredAssets.length} showZero />
+            <Badge count={assets.length} showZero />
           </Space>
         }
         extra={
@@ -461,7 +514,7 @@ const DataGridPage: React.FC = () => {
           </table>
         </div>
 
-        {filteredAssets.length === 0 && !loading && (
+        {assets.length === 0 && !loading && (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <Text type="secondary">未找到匹配的资产数据</Text>
           </div>
@@ -476,12 +529,12 @@ const DataGridPage: React.FC = () => {
         {/* 分页信息 */}
         <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text type="secondary">
-            显示 {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredAssets.length)} 条，共 {filteredAssets.length} 条记录
+            显示 {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalRecords)} 条，共 {totalRecords} 条记录
           </Text>
           <Pagination
             current={currentPage}
             pageSize={pageSize}
-            total={filteredAssets.length}
+            total={totalRecords}
             onChange={handlePageChange}
             onShowSizeChange={handlePageChange}
             showSizeChanger

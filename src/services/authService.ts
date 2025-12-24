@@ -1,4 +1,4 @@
-import { mockUsers } from './mockData'
+import { post } from '../utils/fetchWrapper'
 
 // 用户类型定义
 export interface User {
@@ -17,72 +17,99 @@ export interface User {
   bio?: string
 }
 
+// 登录请求类型
+export interface LoginRequest {
+  username: string
+  password: string
+}
+
 // 登录响应类型
 export interface AuthResponse {
   success: boolean
   message: string
   token?: string
-  user?: Omit<User, 'password'>
+  user?: {
+    id: number
+    username: string
+    name: string
+    role: string
+  }
 }
 
-// 模拟登录函数
+// 真实登录函数 - 调用后端API
 export const login = async (username: string, password: string): Promise<AuthResponse> => {
-  // 模拟网络延迟
-  await new Promise(resolve => setTimeout(resolve, 500))
-  
-  const user = mockUsers.find(u => u.username === username && u.password === password)
-  
-  if (user) {
-    // 生成模拟token（实际项目中应使用JWT等安全方案）
-    const token = `mock-jwt-token-${user.id}-${Date.now()}`
-    
-    // 存储token到localStorage（仅用于演示）
-    localStorage.setItem('financial_system_token', token)
-    localStorage.setItem('financial_system_user', JSON.stringify({
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      email: user.email,
-      avatar: user.avatar,
-      role: user.role,
-    }))
-    
+  try {
+    const response = await post<AuthResponse>('/auth/login', {
+      username,
+      password,
+    }, {
+      showLoading: true,
+      showError: true,
+      timeout: 30000,
+    })
+
+    const authData = response.data
+
+    if (authData.success && authData.token && authData.user) {
+      // 存储token到localStorage
+      localStorage.setItem('auth_token', authData.token)
+      localStorage.setItem('user_info', JSON.stringify(authData.user))
+      
+      // 为了向后兼容，也存储旧的key
+      localStorage.setItem('financial_system_token', authData.token)
+      localStorage.setItem('financial_system_user', JSON.stringify(authData.user))
+    }
+
+    return authData
+  } catch (error) {
+    console.error('登录失败:', error)
     return {
-      success: true,
-      message: '登录成功',
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        role: user.role,
-      },
+      success: false,
+      message: error instanceof Error ? error.message : '网络错误，请检查网络连接',
+    }
+  }
+}
+
+// 登出函数 - 清除所有登录信息
+export const logout = (): void => {
+  // 清除新的token存储
+  localStorage.removeItem('auth_token')
+  localStorage.removeItem('user_info')
+  
+  // 清除旧的token存储（为了向后兼容）
+  localStorage.removeItem('financial_system_token')
+  localStorage.removeItem('financial_system_user')
+  
+  // 清除所有用户扩展信息
+  const keysToRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith('financial_system_user_profile_')) {
+      keysToRemove.push(key)
     }
   }
   
-  return {
-    success: false,
-    message: '用户名或密码错误',
-  }
-}
-
-// 登出函数
-export const logout = (): void => {
-  localStorage.removeItem('financial_system_token')
-  localStorage.removeItem('financial_system_user')
+  keysToRemove.forEach(key => localStorage.removeItem(key))
+  
+  console.log('用户已登出，所有登录信息已清除')
 }
 
 // 检查是否已登录
 export const isAuthenticated = (): boolean => {
-  const token = localStorage.getItem('financial_system_token')
+  // 优先检查新的token存储
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('financial_system_token')
   return !!token
 }
 
 // 获取当前用户信息
 export const getCurrentUser = (): Omit<User, 'password'> | null => {
-  const userStr = localStorage.getItem('financial_system_user')
+  // 优先检查新的用户信息存储
+  let userStr = localStorage.getItem('user_info')
+  if (!userStr) {
+    // 回退到旧的用户信息存储
+    userStr = localStorage.getItem('financial_system_user')
+  }
+  
   if (userStr) {
     try {
       const user = JSON.parse(userStr)

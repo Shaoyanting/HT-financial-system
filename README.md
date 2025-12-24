@@ -22,7 +22,7 @@ src/
 │   └── Layout/         # 布局组件
 ├── pages/              # 页面组件
 │   ├── LoginPage.tsx   # 登录页面
-│   ├── DashboardPage.tsx # 数据看板页面
+│   ├── DashboardPage.tsx # 资产总览页面
 │   └── ...             # 其他页面
 ├── utils/              # 工具函数
 │   └── formatters.ts   # 格式化工具
@@ -73,4 +73,3 @@ npm run preview
 2. **普通用户账户**
    - 用户名: `user1`
    - 密码: `user123`
-

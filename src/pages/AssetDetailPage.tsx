@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Row, Col, Card, Typography, Statistic, Tag, Button, Descriptions, Space, Divider, Timeline, Progress, Alert } from 'antd'
-import { ArrowLeftOutlined, EditOutlined, DownloadOutlined, ShareAltOutlined, StarOutlined, LineChartOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, DownloadOutlined, LineChartOutlined } from '@ant-design/icons'
 import { TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar, Building, Globe } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { getAssetById, getAssetHistory } from '../services/dataService'
+import { getAssetById, getAssetHistory, getAssetDetailFromApi } from '../services/dataService'
 import { formatCurrency, formatPercent, getChangeColorClass } from '../utils/formatters'
+import { downloadChart } from '../utils/chartDownload'
 import type { Asset } from '../services/dataService'
 
 const { Title, Text } = Typography
@@ -23,14 +24,34 @@ const AssetDetailPage: React.FC = () => {
 
       try {
         setLoading(true)
+        // 调用新的API接口获取资产详情
+        const apiResponse = await getAssetDetailFromApi(id)
+        
+        if (apiResponse.success) {
+          // 使用API返回的数据
+          setAsset(apiResponse.data)
+          
+          // 获取历史数据（暂时使用模拟数据）
+          const history = await getAssetHistory(id, 30)
+          setHistoryData(history)
+        } else {
+          // 如果API调用失败，使用模拟数据
+          const [assetData, history] = await Promise.all([
+            getAssetById(id),
+            getAssetHistory(id, 30),
+          ])
+          setAsset(assetData)
+          setHistoryData(history)
+        }
+      } catch (error) {
+        console.error('加载资产详情错误:', error)
+        // 出错时使用模拟数据
         const [assetData, history] = await Promise.all([
           getAssetById(id),
-          getAssetHistory(id, 30), // 获取最近30天的历史数据
+          getAssetHistory(id, 30),
         ])
         setAsset(assetData)
         setHistoryData(history)
-      } catch (error) {
-        console.error('加载资产详情错误:', error)
       } finally {
         setLoading(false)
       }
@@ -73,7 +94,7 @@ const AssetDetailPage: React.FC = () => {
           showIcon
           action={
             <Button type="primary" onClick={() => navigate('/data-grid')}>
-              返回数据列表
+              返回持仓明细
             </Button>
           }
         />
@@ -91,7 +112,7 @@ const AssetDetailPage: React.FC = () => {
           onClick={() => navigate('/data-grid')}
           style={{ marginBottom: 16 }}
         >
-          返回数据列表
+          返回持仓明细
         </Button>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -105,7 +126,7 @@ const AssetDetailPage: React.FC = () => {
             <Text type="secondary">
               <Space>
                 <Building size={16} />
-                {asset.industry}
+                {asset.assetCategory}
                 <Divider type="vertical" />
                 <Globe size={16} />
                 股票代码: {asset.code}
@@ -117,10 +138,7 @@ const AssetDetailPage: React.FC = () => {
           </div>
           
           <Space>
-            <Button icon={<StarOutlined />}>关注</Button>
-            <Button icon={<EditOutlined />}>编辑</Button>
             <Button icon={<DownloadOutlined />}>导出</Button>
-            <Button icon={<ShareAltOutlined />}>分享</Button>
           </Space>
         </div>
       </div>
@@ -128,47 +146,55 @@ const AssetDetailPage: React.FC = () => {
       {/* 关键指标 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="当前价格"
-              value={asset.currentPrice}
-              prefix={<DollarSign size={16} />}
-              valueStyle={{ color: '#1890ff' }}
-              suffix="¥"
-            />
+          <Card style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1 }}>
+              <Statistic
+                title="当前价格"
+                value={asset.currentPrice}
+                prefix={<DollarSign size={16} />}
+                valueStyle={{ color: '#1890ff' }}
+                suffix="¥"
+              />
+            </div>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="涨跌幅"
-              value={asset.changePercent}
-              prefix={asset.changePercent > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-              valueStyle={{ color: asset.changePercent >= 0 ? '#52c41a' : '#f5222d' }}
-              suffix="%"
-            />
+          <Card style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1 }}>
+              <Statistic
+                title="涨跌幅"
+                value={asset.changePercent}
+                prefix={asset.changePercent > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                valueStyle={{ color: asset.changePercent >= 0 ? '#52c41a' : '#f5222d' }}
+                suffix="%"
+              />
+            </div>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="市值"
-              value={asset.marketValue}
-              prefix={<BarChart3 size={16} />}
-              valueStyle={{ color: '#722ed1' }}
-              formatter={(value) => formatCurrency(value as number)}
-            />
+          <Card style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1 }}>
+              <Statistic
+                title="市值"
+                value={asset.marketValue}
+                prefix={<BarChart3 size={16} />}
+                valueStyle={{ color: '#722ed1' }}
+                formatter={(value) => formatCurrency(value as number)}
+              />
+            </div>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="市盈率"
-              value={asset.pe || 0}
-              prefix={<LineChartOutlined />}
-              valueStyle={{ color: '#fa8c16' }}
-              precision={2}
-            />
+          <Card style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1 }}>
+              <Statistic
+                title="市盈率"
+                value={asset.pe || 0}
+                prefix={<LineChartOutlined />}
+                valueStyle={{ color: '#fa8c16' }}
+                precision={2}
+              />
+            </div>
           </Card>
         </Col>
       </Row>
@@ -176,14 +202,43 @@ const AssetDetailPage: React.FC = () => {
       {/* 图表和详细信息 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} lg={16}>
-          <Card title="价格走势">
-            <div style={{ height: 300 }}>
+          <Card 
+            title="价格走势" 
+            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            extra={
+              <Button 
+                type="text" 
+                icon={<DownloadOutlined />}
+                onClick={() => {
+                  downloadChart('price-chart-container', `${asset.code}_价格走势`)
+                }}
+              >
+                
+              </Button>
+            }
+          >
+            <div id="price-chart-container" style={{ flex: 1, minHeight: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={historyData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`¥${value}`, '价格']} />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => {
+                      // 简化日期显示，只显示日
+                      if (!value) return ''
+                      const date = new Date(value)
+                      return `${date.getMonth() + 1}/${date.getDate()}`
+                    }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => `¥${value}`}
+                  />
+                  <Tooltip 
+                    formatter={(value) => [`¥${value}`, '价格']}
+                    labelFormatter={(label) => `日期: ${label}`}
+                  />
                   <Legend />
                   <Area
                     type="monotone"
@@ -192,6 +247,9 @@ const AssetDetailPage: React.FC = () => {
                     fill="#1890ff"
                     fillOpacity={0.3}
                     name="价格"
+                    strokeWidth={2}
+                    dot={{ stroke: '#1890ff', strokeWidth: 2, r: 3 }}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -199,34 +257,36 @@ const AssetDetailPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} lg={8}>
-          <Card title="资产信息">
-            <Descriptions column={1} size="small">
-              <Descriptions.Item label="资产代码">{asset.code}</Descriptions.Item>
-              <Descriptions.Item label="资产名称">{asset.name}</Descriptions.Item>
-              <Descriptions.Item label="行业分类">
-                <Tag color="blue">{asset.industry}</Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="当前价格">
-                <Text strong>{formatCurrency(asset.currentPrice, '¥', 2)}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="持仓数量">
-                {asset.position.toLocaleString()} 股
-              </Descriptions.Item>
-              <Descriptions.Item label="持仓市值">
-                {formatCurrency(asset.marketValue)}
-              </Descriptions.Item>
-              <Descriptions.Item label="权重">
-                <Progress percent={asset.weight} size="small" />
-              </Descriptions.Item>
-              <Descriptions.Item label="当日盈亏">
-                <Text type={asset.dailyGain >= 0 ? 'success' : 'danger'}>
-                  {formatCurrency(asset.dailyGain)}
-                </Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="市盈率">
-                {(asset.pe || 0).toFixed(2)}
-              </Descriptions.Item>
-            </Descriptions>
+          <Card title="资产信息" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="资产代码">{asset.code}</Descriptions.Item>
+                <Descriptions.Item label="资产名称">{asset.name}</Descriptions.Item>
+                <Descriptions.Item label="资产类别">
+                  <Tag color="blue">{asset.assetCategory}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="当前价格">
+                  <Text strong>{formatCurrency(asset.currentPrice, '¥', 2)}</Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="持仓数量">
+                  {asset.position.toLocaleString()} 股
+                </Descriptions.Item>
+                <Descriptions.Item label="持仓市值">
+                  {formatCurrency(asset.marketValue)}
+                </Descriptions.Item>
+                <Descriptions.Item label="权重">
+                  <Progress percent={asset.weight} size="small" />
+                </Descriptions.Item>
+                <Descriptions.Item label="当日盈亏">
+                  <Text type={asset.dailyGain >= 0 ? 'success' : 'danger'}>
+                    {formatCurrency(asset.dailyGain)}
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="市盈率">
+                  {(asset.pe || 0).toFixed(2)}
+                </Descriptions.Item>
+              </Descriptions>
+            </div>
           </Card>
         </Col>
       </Row>
@@ -234,8 +294,8 @@ const AssetDetailPage: React.FC = () => {
       {/* 相关资产和新闻 */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
-          <Card title="相关资产">
-            <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+          <Card title="相关资产" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, overflowY: 'auto', maxHeight: 300 }}>
               {relatedAssets.map((relatedAsset) => (
                 <div
                   key={relatedAsset.id}
@@ -274,34 +334,26 @@ const AssetDetailPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="最新动态">
-            <Timeline>
-              {newsItems.map((item, index) => (
-                <Timeline.Item key={index}>
-                  <div>
-                    <Text strong>{item.content}</Text>
+          <Card title="最新动态" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <Timeline>
+                {newsItems.map((item, index) => (
+                  <Timeline.Item key={index}>
                     <div>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        {item.time}
-                      </Text>
+                      <Text strong>{item.content}</Text>
+                      <div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {item.time}
+                        </Text>
+                      </div>
                     </div>
-                  </div>
-                </Timeline.Item>
-              ))}
-            </Timeline>
+                  </Timeline.Item>
+                ))}
+              </Timeline>
+            </div>
           </Card>
         </Col>
       </Row>
-
-      {/* 操作按钮 */}
-      <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <Space>
-          <Button type="primary">添加到观察列表</Button>
-          <Button>设置价格提醒</Button>
-          <Button>生成分析报告</Button>
-          <Button danger>从组合中移除</Button>
-        </Space>
-      </div>
     </div>
   )
 }

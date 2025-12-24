@@ -316,12 +316,12 @@ const MainLayout: React.FC = () => {
     {
       key: "/dashboard",
       icon: <DashboardOutlined />,
-      label: "数据看板",
+      label: "资产总览",
     },
     {
       key: "/data-grid",
       icon: <TableOutlined />,
-      label: "数据列表",
+      label: "持仓明细",
     },
     {
       key: "/charts-analysis",

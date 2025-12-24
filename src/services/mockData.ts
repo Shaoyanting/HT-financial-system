@@ -25,7 +25,7 @@ export const mockUsers = [
 
 // 模拟资产数据
 export const generateAssets = (count: number = 50) => {
-  const industries = ['科技', '金融', '消费', '医疗', '能源', '工业', '房地产', '材料', '公用事业', '通信服务']
+  const assetCategories = ['现金', '债券', '股票', '基金', '商品', '房地产', '其他']
   const assetCodes = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'JPM', 'V', 'JNJ', 'WMT', 'PG', 'UNH', 'HD', 'BAC', 'MA']
   
   return Mock.mock({
@@ -37,7 +37,7 @@ export const generateAssets = (count: number = 50) => {
         'currentPrice|100-5000.2': 1,
         'changePercent|0.1-15.2': 1,
         'marketValue|1000000-1000000000.2': 1,
-        'industry': () => Mock.Random.pick(industries),
+        'assetCategory': () => Mock.Random.pick(assetCategories),
         'position|1000-100000': 1,
         'costPrice|80-3000.2': 1,
         'dailyGain|1000-50000.2': 1,
@@ -59,7 +59,7 @@ export const generateAssets = (count: number = 50) => {
     currentPrice: number;
     changePercent: number;
     marketValue: number;
-    industry: string;
+    assetCategory: string;
     position: number;
     costPrice: number;
     dailyGain: number;
@@ -125,11 +125,11 @@ export const generatePortfolioMetrics = () => {
 
 // 模拟资产分布数据
 export const generateAssetAllocation = () => {
-  const categories = ['股票', '债券', '现金', '商品', '房地产', '其他']
+  const categories = ['股票', '债券', '现金', '商品', '房地产', '基金', '其他']
   
   return categories.map(category => ({
     category,
-    value: Mock.Random.float(5, 40, 2, 2),
+    value: Mock.Random.float(5, 35, 2, 2),
     color: Mock.Random.color(),
   }))
 }
