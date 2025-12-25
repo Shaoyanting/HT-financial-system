@@ -194,7 +194,21 @@
     "volatility": 0.85,
     "beta": 1.25,
     "sharpeRatio": 1.85,
-    "maxDrawdown": 15.2
+    "maxDrawdown": 15.2,
+    "tend": [
+      {
+        "id":1,
+        "assetId":1,
+        "date":2025-01-01,
+        "price":100
+      },
+      {
+        "id":1,
+        "assetId":1,
+        "date":2025-02-01,
+        "price":200
+      },
+    ],
   }
 }
 ```

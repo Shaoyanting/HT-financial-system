@@ -166,6 +166,92 @@ const DataGridPage: React.FC = () => {
     message.success('已清除所有筛选条件')
   }
 
+  // 导出资产数据
+  const handleExportAssets = async () => {
+    try {
+      // 显示加载提示
+      const hideLoading = message.loading('正在导出数据...', 0)
+      
+      // 构建导出参数
+      const exportParams = {
+        page: 1,
+        size: 1000, // 导出所有数据，设置较大的size值
+        search: debouncedSearchText,
+        industry: assetCategoryFilter !== 'all' ? assetCategoryFilter : '',
+        sortBy: sorting.length > 0 ? sorting[0].id : 'currentPrice',
+        sortOrder: sorting.length > 0 ? (sorting[0].desc ? 'desc' : 'asc') : 'desc',
+        export: true,
+      }
+
+      // 构建查询字符串
+      const queryParams = new URLSearchParams({
+        page: exportParams.page.toString(),
+        size: exportParams.size.toString(),
+        search: exportParams.search,
+        industry: exportParams.industry,
+        sortBy: exportParams.sortBy,
+        sortOrder: exportParams.sortOrder,
+        export: 'true',
+      }).toString()
+
+      // 获取token
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        throw new Error('用户未登录')
+      }
+
+      // 使用生产环境API地址
+      const API_BASE_URL = 'http://101.42.252.64:8080/api'
+      const url = `${API_BASE_URL}/assets?${queryParams}`
+
+      // 使用fetch直接下载文件
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`导出失败: ${response.status} ${response.statusText}`)
+      }
+
+      // 获取文件名
+      const contentDisposition = response.headers.get('content-disposition')
+      let filename = `资产列表_${new Date().toISOString().split('T')[0]}.csv`
+      
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?(.+?)"?$/)
+        if (match && match[1]) {
+          filename = match[1]
+        }
+      }
+
+      // 获取blob数据
+      const blob = await response.blob()
+      
+      // 创建下载链接
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // 清理URL
+      window.URL.revokeObjectURL(downloadUrl)
+      
+      // 关闭加载提示
+      hideLoading()
+      message.success('导出成功！')
+      
+    } catch (error) {
+      console.error('导出失败:', error)
+      message.error(`导出失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    }
+  }
+
   // 防抖搜索
   const debounceTimeoutRef = useRef<number | null>(null)
 
@@ -432,7 +518,13 @@ const DataGridPage: React.FC = () => {
                 </Button>
               </Tooltip>
               <Tooltip title="导出数据">
-                <Button icon={<DownloadOutlined />}>导出</Button>
+                <Button 
+                  icon={<DownloadOutlined />}
+                  onClick={handleExportAssets}
+                  loading={loading}
+                >
+                  导出
+                </Button>
               </Tooltip>
             </Space>
           </Col>

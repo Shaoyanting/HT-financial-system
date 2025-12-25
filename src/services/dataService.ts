@@ -159,6 +159,7 @@ export interface GetAssetsParams {
   industry?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+  export?: boolean
 }
 
 // 从后端API获取资产列表
@@ -171,6 +172,7 @@ export const getAssetsFromApi = async (params: GetAssetsParams = {}): Promise<As
       industry = '',
       sortBy = 'currentPrice',
       sortOrder = 'desc',
+      export: exportData = false,
     } = params
 
     // 检查用户是否已登录
@@ -188,9 +190,14 @@ export const getAssetsFromApi = async (params: GetAssetsParams = {}): Promise<As
       industry,
       sortBy,
       sortOrder,
-    }).toString()
+    })
+    
+    // 添加导出参数
+    if (exportData) {
+      queryParams.append('export', 'true')
+    }
 
-    const response = await get<AssetsApiResponse>(`/assets?${queryParams}`, {
+    const response = await get<AssetsApiResponse>(`/assets?${queryParams.toString()}`, {
       showLoading: false, // 在页面级别控制加载提示
       showError: false,   // 在页面级别控制错误提示
       timeout: 10000,     // 10秒超时
