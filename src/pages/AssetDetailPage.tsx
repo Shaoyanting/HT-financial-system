@@ -9,12 +9,21 @@ import { formatCurrency, formatPercent, getChangeColorClass } from '../utils/for
 import { downloadChart } from '../utils/chartDownload'
 import type { Asset } from '../services/dataService'
 
+// 扩展 Asset 类型以包含 tend 字段
+interface AssetWithTend extends Asset {
+  tend?: Array<{
+    date: string;
+    price: number;
+    volume?: number;
+  }>;
+}
+
 const { Title, Text } = Typography
 
 const AssetDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [asset, setAsset] = useState<Asset | null>(null)
+  const [asset, setAsset] = useState<AssetWithTend | null>(null)
   const [historyData, setHistoryData] = useState<Array<{date: string; price: number; volume: number}>>([])
   const [loading, setLoading] = useState(true)
 
@@ -29,11 +38,20 @@ const AssetDetailPage: React.FC = () => {
         
         if (apiResponse.success) {
           // 使用API返回的数据
-          setAsset(apiResponse.data)
+          const assetData = apiResponse.data as AssetWithTend
+          setAsset(assetData)
           
-          // 获取历史数据（暂时使用模拟数据）
-          const history = await getAssetHistory(id, 30)
-          setHistoryData(history)
+          // 优先使用API返回的tend数据，如果没有则获取模拟历史数据
+          if (assetData.tend && assetData.tend.length > 0) {
+            setHistoryData(assetData.tend.map(item => ({
+              date: item.date,
+              price: item.price,
+              volume: item.volume || 0
+            })))
+          } else {
+            const history = await getAssetHistory(id, 30)
+            setHistoryData(history)
+          }
         } else {
           // 如果API调用失败，使用模拟数据
           const [assetData, history] = await Promise.all([
@@ -213,27 +231,35 @@ const AssetDetailPage: React.FC = () => {
               </Button>
             }
           >
-            <div id="price-chart-container" style={{ flex: 1, minHeight: 300 }}>
+            <div id="price-chart-container" style={{ flex: 1, height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={historyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                <AreaChart
+                  data={historyData}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 
                     dataKey="date" 
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => {
-                      // 简化日期显示，只显示日
-                      if (!value) return ''
-                      const date = new Date(value)
-                      return `${date.getMonth() + 1}/${date.getDate()}`
+                      const date = new Date(value);
+                      return `${date.getMonth() + 1}/${date.getDate()}`;
                     }}
                   />
                   <YAxis 
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `¥${value}`}
+                    tickFormatter={(value) => `¥${value.toFixed(2)}`}
+                    domain={['dataMin - 10', 'dataMax + 10']}
                   />
                   <Tooltip 
-                    formatter={(value) => [`¥${value}`, '价格']}
+                    formatter={(value) => [`¥${Number(value).toFixed(2)}`, '价格']}
                     labelFormatter={(label) => `日期: ${label}`}
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #d9d9d9',
+                      borderRadius: '6px',
+                      fontSize: '12px'
+                    }}
                   />
                   <Legend />
                   <Area
@@ -242,10 +268,9 @@ const AssetDetailPage: React.FC = () => {
                     stroke="#1890ff"
                     fill="#1890ff"
                     fillOpacity={0.3}
-                    name="价格"
                     strokeWidth={2}
-                    dot={{ stroke: '#1890ff', strokeWidth: 2, r: 3 }}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
+                    name="价格"
+                    activeDot={{ r: 6 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
