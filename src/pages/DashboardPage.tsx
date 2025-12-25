@@ -21,6 +21,7 @@ import {
   PieChartOutlined,
   SafetyOutlined,
   CalendarOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import { TrendingUp, Wallet, BarChart3 } from "lucide-react";
 import {
@@ -57,7 +58,7 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 // 日期范围类型
-type DateRangeType = '7days' | '30days' | 'custom';
+type DateRangeType = '7days' | '30days'|'90days' | '180days' | 'custom';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate()
@@ -68,10 +69,10 @@ const DashboardPage: React.FC = () => {
   const [error, setError] = useState<string>("");
   
   // 日期范围状态
-  const [dateRangeType, setDateRangeType] = useState<DateRangeType>('7days');
+  const [dateRangeType, setDateRangeType] = useState<DateRangeType>('180days');
   const [customDateRange, setCustomDateRange] = useState<[Dayjs, Dayjs] | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Dayjs; end: Dayjs }>({
-    start: dayjs().subtract(7, 'day'),
+    start: dayjs().subtract(180, 'day'),
     end: dayjs(),
   });
   const [datePickerVisible, setDatePickerVisible] = useState(false);
@@ -88,6 +89,12 @@ const DashboardPage: React.FC = () => {
       case '30days':
         start = dayjs().subtract(30, 'day');
         break;
+      case '90days':
+        start = dayjs().subtract(90, 'day');
+        break;
+      case '180days':
+        start = dayjs().subtract(180, 'day');
+        break;
       case 'custom':
         if (customRange) {
           start = customRange[0];
@@ -97,7 +104,7 @@ const DashboardPage: React.FC = () => {
         }
         break;
       default:
-        start = dayjs().subtract(7, 'day');
+        start = dayjs().subtract(180, 'day');
     }
     
     setDateRange({ start, end });
@@ -322,7 +329,7 @@ const DashboardPage: React.FC = () => {
 
   // 最近七天数据按钮处理函数
   const handleLast7Days = () => {
-    updateDateRange('7days');
+    updateDateRange('180days');
   };
 
   return (
@@ -355,6 +362,8 @@ const DashboardPage: React.FC = () => {
                   presets={[
                     { label: '最近7天', value: [dayjs().subtract(7, 'day'), dayjs()] },
                     { label: '最近30天', value: [dayjs().subtract(30, 'day'), dayjs()] },
+                    { label: '最近90天', value: [dayjs().subtract(90, 'day'), dayjs()] },
+                    { label: '最近半年', value: [dayjs().subtract(180, 'day'), dayjs()] },
                   ]}
                 />
               </div>
@@ -375,10 +384,14 @@ const DashboardPage: React.FC = () => {
                         return '近7天';
                       case '30days':
                         return '近30天';
+                      case '90days':
+                        return '近一季度';
+                      case '180days':
+                        return '近半年';
                       case 'custom':
                         return `${dateRange.start.format('MM-DD')} 至 ${dateRange.end.format('MM-DD')}`;
                       default:
-                        return '近7天';
+                        return '近180天';
                     }
                   })()}
                   prefix={<CalendarOutlined />}
@@ -529,7 +542,7 @@ const DashboardPage: React.FC = () => {
                 </Space>
                 <Button 
                   type="text" 
-                  icon={<ArrowDownOutlined />}
+                  icon={<DownloadOutlined />}
                   onClick={handleDownloadPerformanceChart}
                   title="下载图表"
                 >
@@ -581,7 +594,7 @@ const DashboardPage: React.FC = () => {
                 </Space>
                 <Button 
                   type="text" 
-                  icon={<ArrowDownOutlined />}
+                  icon={<DownloadOutlined />}
                   onClick={handleDownloadAllocationChart}
                   title="下载图表"
                 >

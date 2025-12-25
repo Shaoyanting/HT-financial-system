@@ -556,6 +556,233 @@ export const getDashboardPerformanceFromApi = async (dateFrom: string, dateTo: s
   }
 }
 
+// 投资组合趋势数据API响应类型
+export interface PortfolioTrendApiResponse {
+  success: boolean
+  data: Array<{
+    date: string
+    portfolio: number
+    benchmark: number
+    volume: number
+  }>
+}
+
+// 月度收益数据API响应类型
+export interface MonthlyReturnsApiResponse {
+  success: boolean
+  data: Array<{
+    month: string
+    收益: number
+    基准: number
+    超额: number
+  }>
+}
+
+// 趋势分析统计指标API响应类型
+export interface TrendStatsApiResponse {
+  success: boolean
+  data: {
+    totalReturn: number
+    benchmarkReturn: number
+    alpha: number
+    beta: number
+    sharpeRatio: number
+    informationRatio: number
+  }
+}
+
+// 从后端API获取投资组合趋势数据
+export const getPortfolioTrendFromApi = async (dateFrom: string, dateTo: string): Promise<PortfolioTrendApiResponse> => {
+  try {
+    // 检查用户是否已登录
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      console.warn('用户未登录，无法获取趋势分析数据')
+      throw new Error('用户未登录')
+    }
+
+    // 构建查询参数
+    const queryParams = new URLSearchParams({
+      dateFrom,
+      dateTo,
+    }).toString()
+
+    const response = await get<PortfolioTrendApiResponse>(`/trend/portfolio?${queryParams}`, {
+      showLoading: false, // 在页面级别控制加载提示
+      showError: false,   // 在页面级别控制错误提示
+      timeout: 10000,     // 10秒超时
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+    
+    // 检查响应是否为HTML（备案页面）
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('text/html')) {
+      console.warn('API返回HTML页面，可能是备案页面，使用模拟数据')
+      throw new Error('API返回HTML页面')
+    }
+    
+    // 调试日志：打印API响应
+    console.log('投资组合趋势数据API响应:', {
+      success: response.data.success,
+      data: response.data.data,
+      dateFrom,
+      dateTo,
+    })
+    
+    return response.data
+  } catch (error) {
+    console.error('获取投资组合趋势数据失败:', error)
+    
+    // 如果是认证错误，抛出以便页面可以处理
+    if (error instanceof Error && error.message.includes('认证失败')) {
+      throw error
+    }
+    
+    // 如果API调用失败，返回模拟数据
+    return {
+      success: false,
+      data: [
+        { date: '2024-01', portfolio: 100, benchmark: 100, volume: 1200000 },
+        { date: '2024-02', portfolio: 105, benchmark: 102, volume: 1350000 },
+        { date: '2024-03', portfolio: 108, benchmark: 105, volume: 1500000 },
+        { date: '2024-04', portfolio: 112, benchmark: 108, volume: 1650000 },
+        { date: '2024-05', portfolio: 115, benchmark: 110, volume: 1800000 },
+        { date: '2024-06', portfolio: 118, benchmark: 112, volume: 1950000 },
+      ],
+    }
+  }
+}
+
+// 从后端API获取月度收益数据
+export const getMonthlyReturnsFromApi = async (dateFrom: string, dateTo: string): Promise<MonthlyReturnsApiResponse> => {
+  try {
+    // 检查用户是否已登录
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      console.warn('用户未登录，无法获取趋势分析数据')
+      throw new Error('用户未登录')
+    }
+
+    // 构建查询参数
+    const queryParams = new URLSearchParams({
+      dateFrom,
+      dateTo,
+    }).toString()
+
+    const response = await get<MonthlyReturnsApiResponse>(`/trend/monthly-returns?${queryParams}`, {
+      showLoading: false, // 在页面级别控制加载提示
+      showError: false,   // 在页面级别控制错误提示
+      timeout: 10000,     // 10秒超时
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+    
+    // 检查响应是否为HTML（备案页面）
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('text/html')) {
+      console.warn('API返回HTML页面，可能是备案页面，使用模拟数据')
+      throw new Error('API返回HTML页面')
+    }
+    
+    // 调试日志：打印API响应
+    console.log('月度收益数据API响应:', {
+      success: response.data.success,
+      data: response.data.data,
+      dateFrom,
+      dateTo,
+    })
+    
+    return response.data
+  } catch (error) {
+    console.error('获取月度收益数据失败:', error)
+    
+    // 如果是认证错误，抛出以便页面可以处理
+    if (error instanceof Error && error.message.includes('认证失败')) {
+      throw error
+    }
+    
+    // 如果API调用失败，返回模拟数据
+    return {
+      success: false,
+      data: [
+        { month: '1月', 收益: 2.5, 基准: 1.8, 超额: 0.7 },
+        { month: '2月', 收益: 3.2, 基准: 2.1, 超额: 1.1 },
+        { month: '3月', 收益: 2.8, 基准: 2.0, 超额: 0.8 },
+        { month: '4月', 收益: 3.5, 基准: 2.5, 超额: 1.0 },
+        { month: '5月', 收益: 2.9, 基准: 2.2, 超额: 0.7 },
+        { month: '6月', 收益: 3.8, 基准: 2.8, 超额: 1.0 },
+      ],
+    }
+  }
+}
+
+// 从后端API获取趋势分析统计指标
+export const getTrendStatsFromApi = async (dateFrom: string, dateTo: string): Promise<TrendStatsApiResponse> => {
+  try {
+    // 检查用户是否已登录
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      console.warn('用户未登录，无法获取趋势分析数据')
+      throw new Error('用户未登录')
+    }
+
+    // 构建查询参数
+    const queryParams = new URLSearchParams({
+      dateFrom,
+      dateTo,
+    }).toString()
+
+    const response = await get<TrendStatsApiResponse>(`/trend/stats?${queryParams}`, {
+      showLoading: false, // 在页面级别控制加载提示
+      showError: false,   // 在页面级别控制错误提示
+      timeout: 10000,     // 10秒超时
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+    
+    // 检查响应是否为HTML（备案页面）
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('text/html')) {
+      console.warn('API返回HTML页面，可能是备案页面，使用模拟数据')
+      throw new Error('API返回HTML页面')
+    }
+    
+    // 调试日志：打印API响应
+    console.log('趋势分析统计指标API响应:', {
+      success: response.data.success,
+      data: response.data.data,
+      dateFrom,
+      dateTo,
+    })
+    
+    return response.data
+  } catch (error) {
+    console.error('获取趋势分析统计指标失败:', error)
+    
+    // 如果是认证错误，抛出以便页面可以处理
+    if (error instanceof Error && error.message.includes('认证失败')) {
+      throw error
+    }
+    
+    // 如果API调用失败，返回模拟数据
+    return {
+      success: false,
+      data: {
+        totalReturn: 35.0,
+        benchmarkReturn: 28.0,
+        alpha: 7.0,
+        beta: 0.95,
+        sharpeRatio: 1.8,
+        informationRatio: 0.9,
+      },
+    }
+  }
+}
+
 // 资产详情API响应类型
 export interface AssetDetailApiResponse {
   success: boolean

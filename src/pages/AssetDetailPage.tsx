@@ -136,10 +136,6 @@ const AssetDetailPage: React.FC = () => {
               </Space>
             </Text>
           </div>
-          
-          <Space>
-            <Button icon={<DownloadOutlined />}>导出</Button>
-          </Space>
         </div>
       </div>
 
