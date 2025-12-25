@@ -149,9 +149,6 @@ const RiskManagementPage: React.FC = () => {
                 <Button size="small" type="primary">
                   风险报告
                 </Button>
-                <Button size="small" icon={<DownloadOutlined />}>
-                  导出数据
-                </Button>
               </Space>
             }
           />
@@ -389,7 +386,6 @@ const RiskManagementPage: React.FC = () => {
                   <Space direction="vertical" size="small">
                     <Text>建议降低股票仓位至60%以下</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>增加对冲工具使用</Text>
-                    <Button type="link" size="small">查看策略</Button>
                   </Space>
                 </Card>
               </Col>
@@ -398,7 +394,6 @@ const RiskManagementPage: React.FC = () => {
                   <Space direction="vertical" size="small">
                     <Text>建议保持10%以上的现金比例</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>优化资产流动性结构</Text>
-                    <Button type="link" size="small">查看策略</Button>
                   </Space>
                 </Card>
               </Col>
@@ -407,7 +402,6 @@ const RiskManagementPage: React.FC = () => {
                   <Space direction="vertical" size="small">
                     <Text>建议分散债券投资，避免单一发行人</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>定期审查信用评级</Text>
-                    <Button type="link" size="small">查看策略</Button>
                   </Space>
                 </Card>
               </Col>
