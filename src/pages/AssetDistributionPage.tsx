@@ -433,7 +433,7 @@ const AssetDistributionPage: React.FC = () => {
               </Card>
             </Col>
             <Col xs={24} lg={12}>
-              <Card title="行业集中度分析">
+              <Card title="行业集中度分析" style={{height:'100%'}}>
                 <div style={{ padding: 24 }}>
                   <div style={{ marginBottom: 16 }}>
                     <Text strong>前三大行业集中度</Text>
