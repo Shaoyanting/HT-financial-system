@@ -200,7 +200,6 @@ const AssetDistributionPage: React.FC = () => {
               <Radio.Group value={viewType} onChange={(e) => setViewType(e.target.value)}>
                 <Radio.Button value="pie">饼图</Radio.Button>
                 <Radio.Button value="bar">柱状图</Radio.Button>
-                <Radio.Button value="tree">树图</Radio.Button>
                 <Radio.Button value="radial">雷达图</Radio.Button>
               </Radio.Group>
             </Space>
@@ -221,21 +220,7 @@ const AssetDistributionPage: React.FC = () => {
               </Select>
             </Space>
           </Col>
-          <Col xs={24} md={6}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Text strong>时间范围</Text>
-              <Select 
-                value={timeRange} 
-                onChange={setTimeRange}
-                style={{ width: '100%' }}
-              >
-                <Option value="current">当前配置</Option>
-                <Option value="historical">历史变化</Option>
-                <Option value="target">目标配置</Option>
-              </Select>
-            </Space>
-          </Col>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={10}>
             <Space style={{ float: 'right' }}>
               <Button icon={<RefreshCw size={16} />} onClick={handleRefresh}>刷新</Button>
               <Button icon={<DownloadOutlined />} type="primary">
@@ -519,13 +504,6 @@ const AssetDistributionPage: React.FC = () => {
             </div>
           </Col>
         </Row>
-        <div style={{ marginTop: 16, textAlign: 'center' }}>
-          <Space>
-            <Button type="primary">生成再平衡建议</Button>
-            <Button>模拟配置调整</Button>
-            <Button>分享配置方案</Button>
-          </Space>
-        </div>
       </Card>
     </div>
   )
