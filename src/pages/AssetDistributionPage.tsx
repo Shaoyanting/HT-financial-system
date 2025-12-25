@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Row, Col, Card, Typography, Select, Space, Button, Radio, Statistic, Tabs, message } from 'antd'
-import { PieChartOutlined, DownloadOutlined, BarChartOutlined } from '@ant-design/icons'
+import { PieChartOutlined, BarChartOutlined } from '@ant-design/icons'
 import { TrendingUp, RefreshCw } from 'lucide-react'
 import {
   PieChart,
@@ -223,9 +223,6 @@ const AssetDistributionPage: React.FC = () => {
           <Col xs={24} md={10}>
             <Space style={{ float: 'right' }}>
               <Button icon={<RefreshCw size={16} />} onClick={handleRefresh}>刷新</Button>
-              <Button icon={<DownloadOutlined />} type="primary">
-                导出
-              </Button>
             </Space>
           </Col>
         </Row>
