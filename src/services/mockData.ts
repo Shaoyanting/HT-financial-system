@@ -170,12 +170,12 @@ export const generateBenchmarkData = (days: number = 365) => {
 // 模拟风险指标数据
 export const generateRiskMetrics = () => {
   return {
-    var95: Mock.Random.float(10000, 50000, 2, 2),
-    cvar95: Mock.Random.float(15000, 60000, 2, 2),
-    stressTestLoss: Mock.Random.float(50000, 200000, 2, 2),
-    liquidityRisk: Mock.Random.float(0.1, 0.5, 2, 2),
-    concentrationRisk: Mock.Random.float(0.2, 0.8, 2, 2),
-    creditRisk: Mock.Random.float(0.1, 0.4, 2, 2),
+    var95: Mock.Random.float(1.5, 4.0, 1, 1), // 百分比值，如2.8%
+    cvar95: Mock.Random.float(3.0, 6.0, 1, 1), // 百分比值，如4.3%
+    stressTestLoss: Mock.Random.float(8.0, 15.0, 1, 1), // 百分比值，如12.5%
+    liquidityRisk: Mock.Random.float(2.0, 5.0, 1, 1), // 百分比值，如3.2%
+    concentrationRisk: Mock.Random.float(15.0, 25.0, 1, 1), // 百分比值，如18.5%
+    creditRisk: Mock.Random.float(1.0, 3.5, 1, 1), // 百分比值，如2.1%
   }
 }
 

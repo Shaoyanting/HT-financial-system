@@ -313,10 +313,81 @@ export const getBenchmarkData = async (days: number = 365): Promise<BenchmarkDat
   return generateBenchmarkData(days)
 }
 
-// 模拟获取风险指标
+// 风险指标API响应类型
+export interface RiskMetricsApiResponse {
+  success: boolean
+  data: RiskMetrics
+}
+
+// 从后端API获取风险指标
+export const getRiskMetricsFromApi = async (): Promise<RiskMetricsApiResponse> => {
+  try {
+    // 检查用户是否已登录
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      console.warn('用户未登录，无法获取风险指标数据')
+      throw new Error('用户未登录')
+    }
+
+    const response = await get<RiskMetricsApiResponse>('/risk/metrics', {
+      showLoading: false, // 在页面级别控制加载提示
+      showError: false,   // 在页面级别控制错误提示
+      timeout: 10000,     // 10秒超时
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+    
+    // 检查响应是否为HTML（备案页面）
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('text/html')) {
+      console.warn('API返回HTML页面，可能是备案页面，使用模拟数据')
+      throw new Error('API返回HTML页面')
+    }
+    
+    // 调试日志：打印API响应
+    console.log('风险指标API响应:', {
+      success: response.data.success,
+      data: response.data.data,
+    })
+    
+    return response.data
+  } catch (error) {
+    console.error('获取风险指标失败:', error)
+    
+    // 如果是认证错误，抛出以便页面可以处理
+    if (error instanceof Error && error.message.includes('认证失败')) {
+      throw error
+    }
+    
+    // 如果API调用失败，返回模拟数据
+    return {
+      success: false,
+      data: generateRiskMetrics(),
+    }
+  }
+}
+
+// 获取风险指标（兼容旧代码，优先使用API）
 export const getRiskMetrics = async (): Promise<RiskMetrics> => {
-  await new Promise(resolve => setTimeout(resolve, 200))
-  return generateRiskMetrics()
+  try {
+    // 首先尝试从API获取
+    const apiResponse = await getRiskMetricsFromApi()
+    
+    // 如果API调用成功，返回API数据
+    if (apiResponse.success && apiResponse.data) {
+      return apiResponse.data
+    }
+    
+    // 如果API调用失败或返回不成功，使用模拟数据
+    console.warn('风险指标API调用失败，使用模拟数据')
+    await new Promise(resolve => setTimeout(resolve, 200))
+    return generateRiskMetrics()
+  } catch (error) {
+    console.error('获取风险指标失败，使用模拟数据:', error)
+    await new Promise(resolve => setTimeout(resolve, 200))
+    return generateRiskMetrics()
+  }
 }
 
 // 模拟获取回撤数据

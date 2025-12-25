@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Row, Col, Card, Typography, Progress, Statistic, Tag, Alert, Space, Button, Select } from 'antd'
+import { Row, Col, Card, Typography, Progress, Statistic, Tag, Alert, Space, Button, Select, message } from 'antd'
 import { WarningOutlined, SafetyOutlined, LineChartOutlined, DownloadOutlined } from '@ant-design/icons'
 import { Shield, AlertTriangle, TrendingDown, BarChart3 } from 'lucide-react'
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { getRiskMetrics, getDrawdownData } from '../services/dataService'
 import type { RiskMetrics, DrawdownDataPoint } from '../services/dataService'
+import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -13,6 +14,7 @@ const RiskManagementPage: React.FC = () => {
   const [riskMetrics, setRiskMetrics] = useState<RiskMetrics | null>(null)
   const [drawdownData, setDrawdownData] = useState<DrawdownDataPoint[]>([])
   const [timeRange, setTimeRange] = useState('1y')
+  const [exportLoading, setExportLoading] = useState(false)
 
   // 根据时间范围获取对应的天数
   const getDaysFromTimeRange = (range: string): number => {
@@ -107,6 +109,63 @@ const RiskManagementPage: React.FC = () => {
     { month: '12月', var: 2.8, cvar: 4.3, volatility: 14.3 },
   ]
 
+  // 处理导出 - 下载所有卡片为一张图片
+  const handleExportAll = async () => {
+    try {
+      setExportLoading(true)
+      message.loading({ content: '正在生成风险报告截图...', key: 'export', duration: 0 })
+      
+      // 动态导入html2canvas
+      const html2canvas = (await import('html2canvas')).default
+      
+      // 获取包含所有卡片的DOM元素
+      const element = document.querySelector('.risk-management-cards')
+      
+      if (!element) {
+        message.error({ content: '未找到要导出的内容', key: 'export' })
+        setExportLoading(false)
+        return
+      }
+      
+      // 设置截图选项
+      const options = {
+        scale: 2, // 提高分辨率
+        useCORS: true, // 允许跨域图片
+        allowTaint: true, // 允许污染画布
+        backgroundColor: '#ffffff', // 白色背景
+        logging: false, // 关闭日志
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+      }
+      
+      // 生成截图
+      const canvas = await html2canvas(element as HTMLElement, options)
+      
+      // 将canvas转换为图片URL
+      const imageUrl = canvas.toDataURL('image/png', 1.0)
+      
+      // 创建下载链接
+      const link = document.createElement('a')
+      link.href = imageUrl
+      link.download = `风险报告_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.png`
+      
+      // 触发下载
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      message.success({ content: '风险报告导出成功！', key: 'export' })
+      
+    } catch (error) {
+      console.error('导出失败:', error)
+      message.error({ content: '导出失败，请重试', key: 'export' })
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
   // 风险等级颜色
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -146,7 +205,13 @@ const RiskManagementPage: React.FC = () => {
             icon={<WarningOutlined />}
             action={
               <Space>
-                <Button size="small" type="primary">
+                <Button 
+                  size="small" 
+                  type="primary"
+                  onClick={handleExportAll}
+                  loading={exportLoading}
+                  icon={<DownloadOutlined />}
+                >
                   风险报告
                 </Button>
               </Space>
@@ -155,8 +220,10 @@ const RiskManagementPage: React.FC = () => {
         </Col>
       </Row>
 
-      {/* 核心风险指标 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      {/* 卡片容器 - 用于导出功能 */}
+      <div className="risk-management-cards">
+        {/* 核心风险指标 */}
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={4}>
           <Card>
             <Statistic
@@ -376,39 +443,40 @@ const RiskManagementPage: React.FC = () => {
         </Col>
       </Row>
 
-      {/* 风险控制建议 */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24}>
-          <Card title="风险控制建议">
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={8}>
-                <Card size="small" title="市场风险" extra={<Tag color="red">高</Tag>}>
-                  <Space direction="vertical" size="small">
-                    <Text>建议降低股票仓位至60%以下</Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>增加对冲工具使用</Text>
-                  </Space>
-                </Card>
-              </Col>
-              <Col xs={24} md={8}>
-                <Card size="small" title="流动性风险" extra={<Tag color="orange">中</Tag>}>
-                  <Space direction="vertical" size="small">
-                    <Text>建议保持10%以上的现金比例</Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>优化资产流动性结构</Text>
-                  </Space>
-                </Card>
-              </Col>
-              <Col xs={24} md={8}>
-                <Card size="small" title="信用风险" extra={<Tag color="green">低</Tag>}>
-                  <Space direction="vertical" size="small">
-                    <Text>建议分散债券投资，避免单一发行人</Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>定期审查信用评级</Text>
-                  </Space>
-                </Card>
-              </Col>
-            </Row>
-          </Card>
-        </Col>
-      </Row>
+        {/* 风险控制建议 */}
+        <Row gutter={[16, 16]}>
+          <Col xs={24}>
+            <Card title="风险控制建议">
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={8}>
+                  <Card size="small" title="市场风险" extra={<Tag color="red">高</Tag>}>
+                    <Space direction="vertical" size="small">
+                      <Text>建议降低股票仓位至60%以下</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>增加对冲工具使用</Text>
+                    </Space>
+                  </Card>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Card size="small" title="流动性风险" extra={<Tag color="orange">中</Tag>}>
+                    <Space direction="vertical" size="small">
+                      <Text>建议保持10%以上的现金比例</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>优化资产流动性结构</Text>
+                    </Space>
+                  </Card>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Card size="small" title="信用风险" extra={<Tag color="green">低</Tag>}>
+                    <Space direction="vertical" size="small">
+                      <Text>建议分散债券投资，避免单一发行人</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>定期审查信用评级</Text>
+                    </Space>
+                  </Card>
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+        </Row>
+      </div>
     </div>
   )
 }
