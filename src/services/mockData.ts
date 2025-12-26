@@ -3,7 +3,20 @@ import dayjs from 'dayjs'
 
 // 模拟用户账户数据 - 生成30个用户
 export const mockUsers = (() => {
-  const users = [
+  const users: Array<{
+    id: number;
+    username: string;
+    password: string;
+    name: string;
+    email: string;
+    avatar: string;
+    role: string;
+    department?: string;
+    position?: string;
+    joinDate?: string;
+    lastLogin?: string;
+    bio?: string;
+  }> = [
     {
       id: 1,
       username: 'admin',

@@ -13,8 +13,6 @@ import {
   Statistic,
   Dropdown,
   message,
-  Tooltip,
-  Badge,
   Pagination,
   DatePicker,
 } from 'antd'
@@ -31,8 +29,6 @@ import {
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
-  LeftOutlined,
-  RightOutlined,
 } from '@ant-design/icons'
 import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react'
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table'

@@ -155,7 +155,7 @@ const PermissionManagementPage: React.FC = () => {
       key: page.id,
       width: 120,
       align: 'center' as const,
-      render: (allowedPages: string[], user: UserPermission) => (
+      render: (_allowedPages: string[], user: UserPermission) => (
         <Checkbox
           checked={hasPermission(user, page.path)}
           onChange={(e) => handlePermissionChange(user.userId, page.path, e.target.checked)}

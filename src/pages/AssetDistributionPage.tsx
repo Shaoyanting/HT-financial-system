@@ -357,7 +357,7 @@ const AssetDistributionPage: React.FC = () => {
                         <YAxis label={{ value: '占比 (%)', angle: -90, position: 'insideLeft' }} />
                         <Tooltip formatter={(value) => [`${value}%`, '占比']} />
                         <Legend />
-                        <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]}>
+                        <Bar dataKey="value" name="占比" fill="#8884d8" radius={[4, 4, 0, 0]}>
                           {pieChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
@@ -420,11 +420,11 @@ const AssetDistributionPage: React.FC = () => {
                         margin={{ top: 20, right: 30, left: 100, bottom: 20 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
+                        <XAxis type="number"/>
                         <YAxis type="category" dataKey="industry" />
                         <Tooltip formatter={(value) => [`${value}%`, '占比']} />
                         <Legend />
-                        <Bar dataKey="value" fill="#8884d8" radius={[0, 4, 4, 0]}>
+                        <Bar dataKey="value" name="占比" fill="#8884d8" radius={[0, 4, 4, 0]}>
                           {industryData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}

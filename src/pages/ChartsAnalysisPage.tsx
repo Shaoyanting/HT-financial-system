@@ -325,7 +325,7 @@ const ChartsAnalysisPage: React.FC = () => {
                       <YAxis type="category" dataKey="industry" />
                       <Tooltip formatter={(value) => [`${value}%`, '占比']} />
                       <Legend />
-                      <Bar dataKey="value" fill="#8884d8" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="value" name="占比" fill="#8884d8" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
