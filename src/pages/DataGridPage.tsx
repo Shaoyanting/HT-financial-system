@@ -568,18 +568,16 @@ const DataGridPage: React.FC = () => {
               format="YYYY-MM-DD"
               placeholder={['开始日期', '结束日期']}
               allowClear={false}
+               presets={[
+                    { label: '最近7天', value: [dayjs().subtract(7, 'day'), dayjs()] },
+                    { label: '最近30天', value: [dayjs().subtract(30, 'day'), dayjs()] },
+                    { label: '最近90天', value: [dayjs().subtract(90, 'day'), dayjs()] },
+                    { label: '最近半年', value: [dayjs().subtract(180, 'day'), dayjs()] },
+                  ]}
             />
           </Col>
-          <Col xs={24} sm={12} md={4}>
+          <Col xs={24} sm={12} md={8} style={{ textAlign: 'right' }}>
             <Space>
-              <Button
-                type="primary"
-                icon={<DownloadOutlined />}
-                onClick={handleExportAssets}
-                loading={loading}
-              >
-                导出数据
-              </Button>
               {(!isDefaultDateRange() || searchText || assetCategoryFilter !== 'all') && (
                 <Button
                   icon={<FilterOutlined />}
@@ -588,6 +586,15 @@ const DataGridPage: React.FC = () => {
                   清除筛选
                 </Button>
               )}
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                onClick={handleExportAssets}
+                loading={loading}
+              >
+                导出数据
+              </Button>
+              
             </Space>
           </Col>
         </Row>
@@ -631,13 +638,34 @@ const DataGridPage: React.FC = () => {
             </thead>
             <tbody>
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                <tr 
+                  key={row.id} 
+                  style={{ 
+                    borderBottom: '1px solid #f0f0f0',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    navigate(`/asset/${row.original.id}`)
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f5f5f5'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = ''
+                  }}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
                       style={{
                         padding: '12px',
                         textAlign: 'left',
+                      }}
+                      onClick={(e) => {
+                        // 如果是操作列，阻止事件冒泡，避免触发行点击
+                        if (cell.column.id === 'actions') {
+                          e.stopPropagation()
+                        }
                       }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
