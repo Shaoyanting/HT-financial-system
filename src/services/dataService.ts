@@ -160,6 +160,8 @@ export interface GetAssetsParams {
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
   export?: boolean
+  dateFrom?: string
+  dateTo?: string
 }
 
 // 从后端API获取资产列表
@@ -173,6 +175,8 @@ export const getAssetsFromApi = async (params: GetAssetsParams = {}): Promise<As
       sortBy = 'currentPrice',
       sortOrder = 'desc',
       export: exportData = false,
+      dateFrom,
+      dateTo,
     } = params
 
     // 检查用户是否已登录
@@ -191,6 +195,14 @@ export const getAssetsFromApi = async (params: GetAssetsParams = {}): Promise<As
       sortBy,
       sortOrder,
     })
+    
+    // 添加日期参数
+    if (dateFrom) {
+      queryParams.append('dateFrom', dateFrom)
+    }
+    if (dateTo) {
+      queryParams.append('dateTo', dateTo)
+    }
     
     // 添加导出参数
     if (exportData) {

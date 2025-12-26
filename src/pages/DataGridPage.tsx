@@ -16,8 +16,11 @@ import {
   Tooltip,
   Badge,
   Pagination,
+  DatePicker,
 } from 'antd'
 import type { MenuProps } from 'antd'
+import type { Dayjs } from 'dayjs'
+import dayjs from 'dayjs'
 import {
   SearchOutlined,
   FilterOutlined,
@@ -37,6 +40,8 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { getAssetsFromApi, type Asset, type AssetsApiResponse, type GetAssetsParams } from '../services/dataService'
 import { formatCurrency, formatPercent, getChangeColorClass } from '../utils/formatters'
 
+const { RangePicker } = DatePicker
+
 const { Title, Text } = Typography
 const { Search } = Input
 const { Option } = Select
@@ -52,6 +57,11 @@ const DataGridPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(10)
   const [apiStats, setApiStats] = useState<AssetsApiResponse['data']['stats'] | null>(null)
   const [debouncedSearchText, setDebouncedSearchText] = useState('')
+  // 日期范围筛选状态 - 默认显示近半年数据
+  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>([
+    dayjs().subtract(180, 'day'),
+    dayjs(),
+  ])
 
   // 获取资产数据
   const fetchAssets = async (params?: GetAssetsParams) => {
@@ -78,17 +88,31 @@ const DataGridPage: React.FC = () => {
     }
   }
 
-  // 初始加载
+  // 处理日期范围变化
+  const handleDateRangeChange = (dates: [Dayjs | null, Dayjs | null] | null) => {
+    setDateRange(dates)
+    setCurrentPage(1) // 重置页码
+  }
+
+  // 初始加载和筛选条件变化时重新获取数据
   useEffect(() => {
-    fetchAssets({
+    const params: GetAssetsParams = {
       page: currentPage,
       size: pageSize,
       search: debouncedSearchText,
       industry: assetCategoryFilter !== 'all' ? assetCategoryFilter : '',
       sortBy: sorting.length > 0 ? sorting[0].id : 'currentPrice',
       sortOrder: sorting.length > 0 ? (sorting[0].desc ? 'desc' : 'asc') : 'desc',
-    })
-  }, [currentPage, pageSize, debouncedSearchText, assetCategoryFilter, sorting])
+    }
+
+    // 添加日期参数
+    if (dateRange && dateRange[0] && dateRange[1]) {
+      params.dateFrom = dateRange[0].format('YYYY-MM-DD')
+      params.dateTo = dateRange[1].format('YYYY-MM-DD')
+    }
+
+    fetchAssets(params)
+  }, [currentPage, pageSize, debouncedSearchText, assetCategoryFilter, sorting, dateRange])
 
   // 使用API统计数据或本地计算统计数据
   const displayStats = useMemo(() => {
@@ -159,10 +183,19 @@ const DataGridPage: React.FC = () => {
     }
   }
 
+  // 检查日期范围是否为默认值（近半年）
+  const isDefaultDateRange = () => {
+    if (!dateRange || !dateRange[0] || !dateRange[1]) return false
+    const defaultStart = dayjs().subtract(180, 'day')
+    const defaultEnd = dayjs()
+    return dateRange[0].isSame(defaultStart, 'day') && dateRange[1].isSame(defaultEnd, 'day')
+  }
+
   // 清除所有筛选条件
   const handleClearFilters = () => {
     setSearchText('')
     setAssetCategoryFilter('all')
+    setDateRange([dayjs().subtract(180, 'day'), dayjs()]) // 重置为近半年
     message.success('已清除所有筛选条件')
   }
 
@@ -173,7 +206,7 @@ const DataGridPage: React.FC = () => {
       const hideLoading = message.loading('正在导出数据...', 0)
       
       // 构建导出参数
-      const exportParams = {
+      const exportParams: GetAssetsParams = {
         page: 1,
         size: 1000, // 导出所有数据，设置较大的size值
         search: debouncedSearchText,
@@ -183,16 +216,32 @@ const DataGridPage: React.FC = () => {
         export: true,
       }
 
+      // 添加日期参数
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        exportParams.dateFrom = dateRange[0].format('YYYY-MM-DD')
+        exportParams.dateTo = dateRange[1].format('YYYY-MM-DD')
+      }
+
       // 构建查询字符串
       const queryParams = new URLSearchParams({
-        page: exportParams.page.toString(),
-        size: exportParams.size.toString(),
-        search: exportParams.search,
-        industry: exportParams.industry,
-        sortBy: exportParams.sortBy,
-        sortOrder: exportParams.sortOrder,
+        page: exportParams.page!.toString(),
+        size: exportParams.size!.toString(),
+        search: exportParams.search || '',
+        industry: exportParams.industry || '',
+        sortBy: exportParams.sortBy || 'currentPrice',
+        sortOrder: exportParams.sortOrder || 'desc',
         export: 'true',
-      }).toString()
+      })
+
+      // 添加日期参数到查询字符串
+      if (exportParams.dateFrom) {
+        queryParams.append('dateFrom', exportParams.dateFrom)
+      }
+      if (exportParams.dateTo) {
+        queryParams.append('dateTo', exportParams.dateTo)
+      }
+
+      const queryString = queryParams.toString()
 
       // 获取token
       const token = localStorage.getItem('auth_token')
@@ -202,7 +251,7 @@ const DataGridPage: React.FC = () => {
 
       // 使用生产环境API地址
       const API_BASE_URL = 'http://101.42.252.64:8080/api'
-      const url = `${API_BASE_URL}/assets?${queryParams}`
+      const url = `${API_BASE_URL}/assets?${queryString}`
 
       // 使用fetch直接下载文件
       const response = await fetch(url, {
@@ -275,7 +324,7 @@ const DataGridPage: React.FC = () => {
   // 当筛选条件变化时重置页码
   useEffect(() => {
     setCurrentPage(1)
-  }, [debouncedSearchText, assetCategoryFilter])
+  }, [debouncedSearchText, assetCategoryFilter, dateRange])
 
   // 定义表格列
   const columns = useMemo<ColumnDef<Asset>[]>(
@@ -477,7 +526,7 @@ const DataGridPage: React.FC = () => {
       {/* 过滤和搜索栏 */}
       <Card style={{ marginBottom: 24 }}>
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <Search
               placeholder="搜索资产代码或名称"
               prefix={<SearchOutlined />}
@@ -488,7 +537,7 @@ const DataGridPage: React.FC = () => {
               enterButton
             />
           </Col>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <Select
               style={{ width: '100%' }}
               placeholder="选择资产类别"
@@ -507,12 +556,25 @@ const DataGridPage: React.FC = () => {
             </Select>
           </Col>
           <Col xs={24} md={8}>
+            <RangePicker
+              value={dateRange}
+              onChange={handleDateRangeChange}
+              style={{ width: '100%' }}
+              presets={[
+                { label: '最近7天', value: [dayjs().subtract(7, 'day'), dayjs()] },
+                { label: '最近30天', value: [dayjs().subtract(30, 'day'), dayjs()] },
+                { label: '最近90天', value: [dayjs().subtract(90, 'day'), dayjs()] },
+                { label: '最近半年', value: [dayjs().subtract(180, 'day'), dayjs()] },
+              ]}
+            />
+          </Col>
+          <Col xs={24} md={4}>
             <Space style={{ float: 'right' }}>
               <Tooltip title="清除所有筛选条件">
                 <Button 
                   icon={<FilterOutlined />}
                   onClick={handleClearFilters}
-                  disabled={!searchText && assetCategoryFilter === 'all'}
+                  disabled={!searchText && assetCategoryFilter === 'all' && isDefaultDateRange()}
                 >
                   清除筛选
                 </Button>

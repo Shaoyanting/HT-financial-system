@@ -134,7 +134,8 @@
       "costPrice": 175.5,
       "dailyGain": 14625.0,
       "totalGain": 146250.0,
-      "weight": 12.5
+      "weight": 12.5,
+      "recordDate": 1736265600000
     },
     {
       "id": 2,
@@ -148,7 +149,8 @@
       "costPrice": 410.25,
       "dailyGain": 8200.0,
       "totalGain": 82000.0,
-      "weight": 10.2
+      "weight": 10.2,
+      "recordDate": 1736265600000
     }
   ],
   "pagination": {
