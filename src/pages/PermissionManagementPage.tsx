@@ -404,35 +404,6 @@ const PermissionManagementPage: React.FC = () => {
           )}
         />
       </Card>
-
-      {/* 使用说明 */}
-      <Card style={{ marginTop: 24 }}>
-        <Title level={4}>使用说明</Title>
-        <Row gutter={[24, 16]}>
-          <Col xs={24} md={12}>
-            <div style={{ padding: 16, background: '#f6ffed', borderRadius: 8 }}>
-              <Title level={5}>权限管理规则</Title>
-              <ul style={{ margin: 0, paddingLeft: 20 }}>
-                <li>管理员默认拥有所有页面权限，不可修改</li>
-                <li>普通用户的权限由管理员进行配置</li>
-                <li>权限变更后需要点击"保存权限"按钮才会生效</li>
-                <li>权限数据保存在浏览器的localStorage中</li>
-              </ul>
-            </div>
-          </Col>
-          <Col xs={24} md={12}>
-            <div style={{ padding: 16, background: '#e6f7ff', borderRadius: 8 }}>
-              <Title level={5}>操作提示</Title>
-              <ul style={{ margin: 0, paddingLeft: 20 }}>
-                <li>勾选复选框表示允许用户访问该页面</li>
-                <li>使用"全选"按钮可以快速为用户授予所有权限</li>
-                <li>使用"清空"按钮可以快速移除用户所有权限</li>
-                <li>表格底部的批量操作可以同时管理所有用户</li>
-              </ul>
-            </div>
-          </Col>
-        </Row>
-      </Card>
     </div>
   )
 }
