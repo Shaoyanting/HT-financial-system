@@ -24,9 +24,11 @@ import {
   CalendarOutlined,
   SaveOutlined,
   EditOutlined,
-  LockOutlined
+  LockOutlined,
+  SafetyOutlined
 } from '@ant-design/icons'
 import { getCurrentUser, saveUserProfile, type User } from '../services/authService'
+import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
@@ -38,6 +40,7 @@ const ProfilePage: React.FC = () => {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null)
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState(false)
+  const navigate = useNavigate()
 
   // 加载用户信息
   useEffect(() => {
@@ -233,13 +236,28 @@ const ProfilePage: React.FC = () => {
                   </Button>
                 </Space>
               ) : (
-                <Button 
-                  type="primary" 
-                  icon={<EditOutlined />} 
-                  onClick={handleEdit}
-                >
-                  编辑个人信息
-                </Button>
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Button 
+                    type="primary" 
+                    icon={<EditOutlined />} 
+                    onClick={handleEdit}
+                    style={{ width: '100%' }}
+                  >
+                    编辑个人信息
+                  </Button>
+                  
+                  {/* 权限管理按钮（仅管理员可见） */}
+                  {user.role === 'admin' && (
+                    <Button 
+                      type="default" 
+                      icon={<SafetyOutlined />} 
+                      onClick={() => navigate('/permission-management')}
+                      style={{ width: '100%' }}
+                    >
+                      权限管理
+                    </Button>
+                  )}
+                </Space>
               )}
             </div>
           </Card>
@@ -277,7 +295,7 @@ const ProfilePage: React.FC = () => {
                     label="邮箱"
                     name="email"
                     rules={[
-                      { required: true, message: '请输入邮箱' },
+                      { required: false, message: '请输入邮箱' },
                       { type: 'email', message: '请输入有效的邮箱地址' }
                     ]}
                   >

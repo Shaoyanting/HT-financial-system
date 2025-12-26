@@ -30,9 +30,10 @@ import {
   ClockCircleOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { message } from "antd";
-import { BarChart3, PieChart, TrendingUp } from "lucide-react";
+import { PieChart, TrendingUp } from "lucide-react";
 import { getCurrentUser, logout } from "../../services/authService";
 import type { MenuProps } from "antd";
 
@@ -347,6 +348,11 @@ const MainLayout: React.FC = () => {
             key: "/risk-management",
             icon: <SafetyOutlined />,
             label: "风险管理",
+          },
+          {
+            key: "/permission-management",
+            icon: <SettingOutlined />,
+            label: "权限管理",
           },
         ]
       : []),

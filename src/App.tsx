@@ -11,6 +11,7 @@ import AssetDetailPage from './pages/AssetDetailPage'
 import TrendAnalysisPage from './pages/TrendAnalysisPage'
 import AssetDistributionPage from './pages/AssetDistributionPage'
 import ProfilePage from './pages/ProfilePage'
+import PermissionManagementPage from './pages/PermissionManagementPage'
 
 
 
@@ -54,6 +55,11 @@ const App: React.FC = () => {
           <Route path="trend-analysis" element={<TrendAnalysisPage />} />
           <Route path="asset-distribution" element={<AssetDistributionPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="permission-management" element={
+            <AdminRoute>
+              <PermissionManagementPage />
+            </AdminRoute>
+          } />
           <Route path="asset/:id" element={<AssetDetailPage />} />
         </Route>
         

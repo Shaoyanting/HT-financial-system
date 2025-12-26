@@ -1,27 +1,53 @@
 import Mock from 'mockjs'
 import dayjs from 'dayjs'
 
-// 模拟用户账户数据
-export const mockUsers = [
-  {
-    id: 1,
-    username: 'admin',
-    password: 'admin123',
-    name: '管理员',
-    email: 'admin@financial.com',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
-    role: 'admin',
-  },
-  {
-    id: 2,
-    username: 'user1',
-    password: 'user123',
-    name: '张三',
-    email: 'zhangsan@financial.com',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=zhangsan',
-    role: 'user',
-  },
-]
+// 模拟用户账户数据 - 生成30个用户
+export const mockUsers = (() => {
+  const users = [
+    {
+      id: 1,
+      username: 'admin',
+      password: 'admin123',
+      name: '管理员',
+      email: 'admin@financial.com',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
+      role: 'admin',
+    },
+  ];
+  
+  // 生成29个普通用户
+  const chineseNames = [
+    '张三', '李四', '王五', '赵六', '钱七', '孙八', '周九', '吴十', '郑十一', '王十二',
+    '刘十三', '陈十四', '杨十五', '黄十六', '赵十七', '周十八', '吴十九', '郑二十', '孙二十一', '李二十二',
+    '王二十三', '张二十四', '刘二十五', '陈二十六', '杨二十七', '黄二十八', '赵二十九', '周三十', '吴三十一'
+  ];
+  
+  const departments = ['投资部', '风控部', '研究部', '技术部', '市场部', '财务部', '人力资源部'];
+  const positions = ['分析师', '经理', '主管', '专员', '助理', '总监', '副总裁'];
+  
+  for (let i = 0; i < 29; i++) {
+    const name = chineseNames[i];
+    const username = `user${i + 1}`;
+    const email = `${username.toLowerCase()}@financial.com`;
+    
+    users.push({
+      id: i + 2,
+      username,
+      password: 'user123',
+      name,
+      email,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
+      role: 'user',
+      department: departments[i % departments.length],
+      position: positions[i % positions.length],
+      joinDate: dayjs().subtract(Mock.Random.integer(1, 36), 'month').format('YYYY-MM-DD'),
+      lastLogin: dayjs().subtract(Mock.Random.integer(0, 7), 'day').format('YYYY-MM-DD HH:mm:ss'),
+      bio: Mock.Random.cparagraph(1, 3),
+    });
+  }
+  
+  return users;
+})();
 
 // 模拟资产数据
 export const generateAssets = (count: number = 50) => {
@@ -229,4 +255,4 @@ export default {
   generateBenchmarkData,
   generateRiskMetrics,
   generateDrawdownData,
-}
+};
