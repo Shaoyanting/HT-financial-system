@@ -151,24 +151,41 @@ export const generatePortfolioMetrics = () => {
 
 // 模拟资产分布数据
 export const generateAssetAllocation = () => {
-  const categories = ['股票', '债券', '现金', '商品', '房地产', '基金', '其他']
+  // 使用用户指定的数据
+  const allocationData = [
+    { category: '股票', value: 40.75, color: '#1890ff' },
+    { category: '证券', value: 15.13, color: '#52c41a' },
+    { category: '基金', value: 20.4, color: '#faad14' },
+    { category: '现金', value: 6.87, color: '#722ed1' },
+    { category: '房地产', value: 5.65, color: '#13c2c2' },
+    { category: '商品', value: 13.13, color: '#f5222d' },
+    { category: '其他', value: 0.23, color: '#eb2f96' },
+  ]
   
-  return categories.map(category => ({
-    category,
-    value: Mock.Random.float(5, 35, 2, 2),
-    color: Mock.Random.color(),
-  }))
+  return allocationData
 }
 
 // 模拟行业分布数据
 export const generateIndustryDistribution = () => {
-  const industries = ['科技', '金融', '消费', '医疗', '能源', '工业', '房地产', '材料', '公用事业', '通信服务']
+  // 使用用户指定的10个行业，确保总和为100%，但顺序随机
+  const industries = [
+    { industry: '医疗', value: 12.8, color: '#722ed1' },
+    { industry: '金融', value: 18.3, color: '#52c41a' },
+    { industry: '工业', value: 7.5, color: '#f5222d' },
+    { industry: '科技', value: 25.5, color: '#1890ff' },
+    { industry: '材料', value: 3.8, color: '#a0d911' },
+    { industry: '消费', value: 15.2, color: '#faad14' },
+    { industry: '能源', value: 8.7, color: '#13c2c2' },
+    { industry: '通信服务', value: 0.8, color: '#7cb305' },
+    { industry: '房地产', value: 5.3, color: '#eb2f96' },
+    { industry: '公用事业', value: 2.1, color: '#fa8c16' },
+  ]
   
-  return industries.map(industry => ({
-    industry,
-    value: Mock.Random.float(5, 25, 2, 2),
-    color: Mock.Random.color(),
-  }))
+  // 验证总和为100%
+  const total = industries.reduce((sum, item) => sum + item.value, 0)
+  console.log(`行业分布数据总和: ${total}%，顺序已随机化`)
+  
+  return industries
 }
 
 // 模拟基准指数数据

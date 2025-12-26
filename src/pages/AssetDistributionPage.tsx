@@ -196,16 +196,6 @@ const AssetDistributionPage: React.FC = () => {
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={8}>
             <Space direction="vertical" style={{ width: '100%' }}>
-              <Text strong>视图类型</Text>
-              <Radio.Group value={viewType} onChange={(e) => setViewType(e.target.value)}>
-                <Radio.Button value="pie">饼图</Radio.Button>
-                <Radio.Button value="bar">柱状图</Radio.Button>
-                <Radio.Button value="radial">雷达图</Radio.Button>
-              </Radio.Group>
-            </Space>
-          </Col>
-          <Col xs={24} md={6}>
-            <Space direction="vertical" style={{ width: '100%' }}>
               <Text strong>资产类别</Text>
               <Select 
                 value={assetCategory} 
@@ -306,7 +296,23 @@ const AssetDistributionPage: React.FC = () => {
         >
           <Row gutter={[16, 16]}>
             <Col xs={24} lg={12}>
-              <Card title="当前资产配置">
+              <Card 
+                title="当前资产配置"
+                extra={
+                  <Space>
+                    <Text strong style={{ marginRight: 8 }}>视图类型:</Text>
+                    <Radio.Group 
+                      value={viewType} 
+                      onChange={(e) => setViewType(e.target.value)}
+                      size="small"
+                    >
+                      <Radio.Button value="pie">饼图</Radio.Button>
+                      <Radio.Button value="bar">柱状图</Radio.Button>
+                      <Radio.Button value="radial">雷达图</Radio.Button>
+                    </Radio.Group>
+                  </Space>
+                }
+              >
                 <div style={{ height: 400 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     {viewType === 'pie' ? (

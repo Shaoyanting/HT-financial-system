@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Row, Col, Card, Typography, Progress, Statistic, Tag, Alert, Space, Button, Select, message } from 'antd'
+import { Row, Col, Card, Typography, Progress, Statistic, Tag, Alert, Space, Button, Select, message, Tooltip } from 'antd'
 import { WarningOutlined, SafetyOutlined, LineChartOutlined, DownloadOutlined } from '@ant-design/icons'
 import { Shield, AlertTriangle, TrendingDown, BarChart3 } from 'lucide-react'
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts'
 import { getRiskMetrics, getDrawdownData } from '../services/dataService'
 import type { RiskMetrics, DrawdownDataPoint } from '../services/dataService'
 import dayjs from 'dayjs'
@@ -225,6 +225,10 @@ const RiskManagementPage: React.FC = () => {
         {/* 核心风险指标 */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={4}>
+          <Tooltip 
+            title="VaR(95%)=95%置信度下的日最大可能损失"
+            placement="top"
+          >
           <Card>
             <Statistic
               title="VaR (95%)"
@@ -235,8 +239,13 @@ const RiskManagementPage: React.FC = () => {
             />
             <Text type="secondary" style={{ fontSize: 12 }}>日度风险价值</Text>
           </Card>
+          </Tooltip>
         </Col>
         <Col xs={24} sm={12} lg={4}>
+        <Tooltip 
+            title="CVaR（95%）=超过VaR部分的平均损失”"
+            placement="top"
+          >
           <Card>
             <Statistic
               title="CVaR (95%)"
@@ -246,9 +255,13 @@ const RiskManagementPage: React.FC = () => {
               prefix={<AlertTriangle size={16} />}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>条件风险价值</Text>
-          </Card>
+          </Card></Tooltip>
         </Col>
         <Col xs={24} sm={12} lg={4}>
+        <Tooltip 
+            title="压力测试基于历史极端市场情景模拟"
+            placement="top"
+          >
           <Card>
             <Statistic
               title="压力测试损失"
@@ -258,9 +271,13 @@ const RiskManagementPage: React.FC = () => {
               prefix={<TrendingDown size={16} />}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>极端情景损失</Text>
-          </Card>
+          </Card></Tooltip>
         </Col>
         <Col xs={24} sm={12} lg={4}>
+        <Tooltip 
+            title="流动性缺口=变现所需时间/市场平均变现时间"
+            placement="top"
+          >
           <Card>
             <Statistic
               title="流动性风险"
@@ -270,9 +287,13 @@ const RiskManagementPage: React.FC = () => {
               prefix={<LineChartOutlined />}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>流动性缺口</Text>
-          </Card>
+          </Card></Tooltip>
         </Col>
         <Col xs={24} sm={12} lg={4}>
+        <Tooltip 
+            title="集中度风险=前十大持仓市值/总资产×100%(95%)=95%置信度下的日最大可能损失"
+            placement="top"
+          >
           <Card>
             <Statistic
               title="集中度风险"
@@ -282,9 +303,13 @@ const RiskManagementPage: React.FC = () => {
               prefix={<BarChart3 size={16} />}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>前十大持仓占比</Text>
-          </Card>
+          </Card></Tooltip>
         </Col>
         <Col xs={24} sm={12} lg={4}>
+        <Tooltip 
+            title="信用风险基于持仓标的信用评级综合计算"
+            placement="top"
+          >
           <Card>
             <Statistic
               title="信用风险"
@@ -294,7 +319,7 @@ const RiskManagementPage: React.FC = () => {
               prefix={<SafetyOutlined />}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>违约概率</Text>
-          </Card>
+          </Card></Tooltip>
         </Col>
       </Row>
 
@@ -319,11 +344,12 @@ const RiskManagementPage: React.FC = () => {
                   <XAxis dataKey="date" />
                   <YAxis yAxisId="left" label={{ value: '价格', angle: -90, position: 'insideLeft' }} />
                   <YAxis yAxisId="right" orientation="right" label={{ value: '回撤 (%)', angle: 90, position: 'insideRight' }} />
-                  <Tooltip 
-                    formatter={(value, name) => {
-                      if (name === 'price') return [`¥${value}`, '价格']
-                      if (name === 'drawdown') return [`${value}%`, '回撤']
-                      return [value, name]
+                  <RechartsTooltip 
+                    formatter={(value: number | string | undefined, name?: string) => {
+                      const val = value ?? ''
+                      if (name === 'price') return [`¥${val}`, '价格']
+                      if (name === 'drawdown') return [`${val}%`, '回撤']
+                      return [val, name || '']
                     }}
                   />
                   <Legend />
@@ -358,7 +384,7 @@ const RiskManagementPage: React.FC = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis label={{ value: '风险值 (%)', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip formatter={(value) => [`${value}%`, '风险值']} />
+                  <RechartsTooltip formatter={(value: number | string | undefined) => [`${value ?? ''}%`, '风险值']} />
                   <Legend />
                   <Line type="monotone" dataKey="var" stroke="#f5222d" strokeWidth={2} name="VaR" />
                   <Line type="monotone" dataKey="cvar" stroke="#fa8c16" strokeWidth={2} name="CVaR" />
