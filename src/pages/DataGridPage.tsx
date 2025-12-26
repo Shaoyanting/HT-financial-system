@@ -71,12 +71,12 @@ const DataGridPage: React.FC = () => {
       if (response.success) {
         console.log('设置资产数据:', {
           dataLength: response.data.data?.length || 0,
-          data: response.data.data,
+          data: response.data.data || [],
           stats: response.data.stats,
           searchParams: params,
         })
-        setAssets(response.data.data)
-        setApiStats(response.data.stats)
+        setAssets(response.data.data || [])
+        setApiStats(response.data.stats || null)
       } else {
         message.error('加载资产数据失败')
       }
@@ -168,12 +168,19 @@ const DataGridPage: React.FC = () => {
     return colors[category] || 'default'
   }
 
-  // 分页数据 - 前端分页（因为后端没有实现分页）
+  // 分页数据 - 根据后端是否已分页决定是否进行前端分页
   const paginatedAssets = useMemo(() => {
+    // 如果有API统计信息且总记录数大于当前资产数量，说明后端已经分页
+    // 这种情况下，assets已经是当前页的数据，直接使用
+    if (apiStats && apiStats.count > assets.length) {
+      return assets
+    }
+    
+    // 否则，进行前端分页
     const startIndex = (currentPage - 1) * pageSize
     const endIndex = startIndex + pageSize
     return assets.slice(startIndex, endIndex)
-  }, [assets, currentPage, pageSize])
+  }, [assets, currentPage, pageSize, apiStats])
 
   // 处理页码变化
   const handlePageChange = (page: number, size?: number) => {
@@ -506,7 +513,7 @@ const DataGridPage: React.FC = () => {
               value={displayStats.totalDailyGain}
               formatter={(value) => formatCurrency(value as number)}
               valueStyle={{ color: displayStats.totalDailyGain >= 0 ? '#52c41a' : '#ff4d4f' }}
-              prefix={displayStats.totalDailyGain >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+              prefix={<TrendingUp size={20} />}
             />
           </Card>
         </Col>
@@ -515,148 +522,122 @@ const DataGridPage: React.FC = () => {
             <Statistic
               title="平均涨跌幅"
               value={displayStats.avgChangePercent}
-              formatter={(value) => formatPercent((value as number) / 100, 2)}
+              formatter={(value) => formatPercent(value as number / 100, 2)}
               valueStyle={{ color: displayStats.avgChangePercent >= 0 ? '#52c41a' : '#ff4d4f' }}
-              prefix={displayStats.avgChangePercent >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+              prefix={<TrendingDown size={20} />}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* 过滤和搜索栏 */}
+      {/* 筛选工具栏 */}
       <Card style={{ marginBottom: 24 }}>
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={6}>
+          <Col xs={24} sm={12} md={6}>
             <Search
               placeholder="搜索资产代码或名称"
-              prefix={<SearchOutlined />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
+              onSearch={(value) => setDebouncedSearchText(value)}
               allowClear
-              onSearch={(value) => setSearchText(value)}
-              enterButton
+              enterButton={<SearchOutlined />}
             />
           </Col>
-          <Col xs={24} md={6}>
+          <Col xs={24} sm={12} md={4}>
             <Select
-              style={{ width: '100%' }}
-              placeholder="选择资产类别"
               value={assetCategoryFilter}
               onChange={setAssetCategoryFilter}
-              suffixIcon={<FilterOutlined />}
+              style={{ width: '100%' }}
+              placeholder="资产类别"
             >
-              <Option value="all">所有资产</Option>
-              <Option value="现金">现金</Option>
-              <Option value="债券">债券</Option>
+              <Option value="all">全部类别</Option>
               <Option value="股票">股票</Option>
+              <Option value="债券">债券</Option>
               <Option value="基金">基金</Option>
+              <Option value="现金">现金</Option>
               <Option value="商品">商品</Option>
               <Option value="房地产">房地产</Option>
               <Option value="其他">其他</Option>
             </Select>
           </Col>
-          <Col xs={24} md={8}>
+          <Col xs={24} sm={12} md={6}>
             <RangePicker
               value={dateRange}
               onChange={handleDateRangeChange}
               style={{ width: '100%' }}
-              presets={[
-                { label: '最近7天', value: [dayjs().subtract(7, 'day'), dayjs()] },
-                { label: '最近30天', value: [dayjs().subtract(30, 'day'), dayjs()] },
-                { label: '最近90天', value: [dayjs().subtract(90, 'day'), dayjs()] },
-                { label: '最近半年', value: [dayjs().subtract(180, 'day'), dayjs()] },
-              ]}
+              format="YYYY-MM-DD"
+              placeholder={['开始日期', '结束日期']}
+              allowClear={false}
             />
           </Col>
-          <Col xs={24} md={4}>
-            <Space style={{ float: 'right' }}>
-              <Tooltip title="清除所有筛选条件">
-                <Button 
+          <Col xs={24} sm={12} md={4}>
+            <Space>
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                onClick={handleExportAssets}
+                loading={loading}
+              >
+                导出数据
+              </Button>
+              {(!isDefaultDateRange() || searchText || assetCategoryFilter !== 'all') && (
+                <Button
                   icon={<FilterOutlined />}
                   onClick={handleClearFilters}
-                  disabled={!searchText && assetCategoryFilter === 'all' && isDefaultDateRange()}
                 >
                   清除筛选
                 </Button>
-              </Tooltip>
-              <Tooltip title="导出数据">
-                <Button 
-                  icon={<DownloadOutlined />}
-                  onClick={handleExportAssets}
-                  loading={loading}
-                >
-                  导出
-                </Button>
-              </Tooltip>
+              )}
             </Space>
           </Col>
         </Row>
       </Card>
 
       {/* 数据表格 */}
-      <Card
-        title={
-          <Space>
-            <FilterOutlined />
-            <span>资产列表</span>
-            <Badge count={assets.length} showZero />
-          </Space>
-        }
-        extra={
-          <Text type="secondary">
-            更新时间: {new Date().toLocaleString()}
-          </Text>
-        }
-      >
+      <Card>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              {table.getHeaderGroups().map(headerGroup => (
-                <tr key={headerGroup.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                  {headerGroup.headers.map(header => (
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
                       style={{
-                        padding: '12px 8px',
+                        padding: '12px',
                         textAlign: 'left',
-                        fontWeight: 600,
+                        borderBottom: '1px solid #f0f0f0',
                         backgroundColor: '#fafafa',
                         cursor: header.column.getCanSort() ? 'pointer' : 'default',
                         minWidth: header.getSize(),
                       }}
-                      onClick={(e) => header.column.getToggleSortingHandler()?.(e)}
+                      onClick={header.column.getToggleSortingHandler()}
                     >
-                      <Space>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         {flexRender(header.column.columnDef.header, header.getContext())}
-                        {{
-                          asc: <ArrowUpOutlined style={{ fontSize: 12 }} />,
-                          desc: <ArrowDownOutlined style={{ fontSize: 12 }} />,
-                        }[header.column.getIsSorted() as string] ?? null}
-                      </Space>
+                        {header.column.getCanSort() && (
+                          <span style={{ marginLeft: 8 }}>
+                            {{
+                              asc: <ArrowUpOutlined />,
+                              desc: <ArrowDownOutlined />,
+                            }[header.column.getIsSorted() as string] ?? null}
+                          </span>
+                        )}
+                      </div>
                     </th>
                   ))}
                 </tr>
               ))}
             </thead>
             <tbody>
-              {table.getRowModel().rows.map(row => (
-                <tr
-                  key={row.id}
-                  style={{
-                    borderBottom: '1px solid #f0f0f0',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.3s',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fafafa')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                  onClick={() => navigate(`/asset/${row.original.id}`)}
-                >
-                  {row.getVisibleCells().map(cell => (
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
                       style={{
-                        padding: '12px 8px',
-                        minWidth: cell.column.getSize(),
+                        padding: '12px',
+                        textAlign: 'left',
                       }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -668,35 +649,22 @@ const DataGridPage: React.FC = () => {
           </table>
         </div>
 
-        {assets.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <Text type="secondary">未找到匹配的资产数据</Text>
-          </div>
-        )}
-
-        {loading && (
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <Text type="secondary">加载中...</Text>
-          </div>
-        )}
-
-        {/* 分页信息 */}
+        {/* 分页 */}
         <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text type="secondary">
-            显示 {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalRecords)} 条，共 {totalRecords} 条记录
-          </Text>
+          <div>
+            <Text type="secondary">
+              显示 {paginatedAssets.length} 条数据，共 {totalRecords} 条
+            </Text>
+          </div>
           <Pagination
             current={currentPage}
             pageSize={pageSize}
             total={totalRecords}
             onChange={handlePageChange}
-            onShowSizeChange={handlePageChange}
             showSizeChanger
             showQuickJumper
-            showTotal={(total, range) => `${range[0]}-${range[1]} 条，共 ${total} 条`}
+            showTotal={(total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`}
             pageSizeOptions={['10', '20', '50', '100']}
-            prevIcon={<LeftOutlined />}
-            nextIcon={<RightOutlined />}
           />
         </div>
       </Card>
