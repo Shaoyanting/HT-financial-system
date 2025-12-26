@@ -411,7 +411,7 @@ const MainLayout: React.FC = () => {
               gap: 12,
             }}
           >
-            <div
+            {/* <div
               style={{
                 width: 40,
                 height: 40,
@@ -423,10 +423,10 @@ const MainLayout: React.FC = () => {
               }}
             >
               <BarChart3 size={24} color="white" />
-            </div>
+            </div> */}
             {!collapsed && (
               <Title level={4} style={{ margin: 0 }}>
-                恒天金融资产系统
+                网新恒天金融资产数据分析及展示平台
               </Title>
             )}
           </div>
@@ -479,7 +479,7 @@ const MainLayout: React.FC = () => {
                   return (
                     menuItem && "label" in menuItem
                       ? menuItem.label
-                      : "恒天金融资产分析系统"
+                      : "网新恒天金融资产数据分析及展示平台"
                   ) as string;
                 })()}
               </Title>

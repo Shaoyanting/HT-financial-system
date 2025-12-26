@@ -68,7 +68,7 @@ const LoginPage: React.FC = () => {
             <Lock size={28} color="white" />
           </div>
           <Title level={2} style={{ marginBottom: 8 }}>
-            恒天金融资产分析系统
+            网新恒天金融资产数据分析及展示平台
           </Title>
           <Text type="secondary">
             请输入您的凭证以访问系统
@@ -141,13 +141,9 @@ const LoginPage: React.FC = () => {
 
           <div style={{ textAlign: 'center', marginTop: 24 }}>
             <Space direction="vertical" size="small">
-              <Text type="secondary">
-                演示账户:
-              </Text>
               <Space>
-                <Text code>admin / admin123</Text>
-                <Text type="secondary">或</Text>
-                <Text code>user1 / user123</Text>
+                <Button size="small">用户注册</Button>
+                <Button size="small">忘记密码</Button>
               </Space>
             </Space>
           </div>
